@@ -7,6 +7,7 @@ import org.jgroups.View;
 import org.jgroups.annotations.MBean;
 import org.jgroups.annotations.ManagedOperation;
 import org.jgroups.annotations.Property;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.stack.Protocol;
 import org.jgroups.util.Streamable;
 import org.jgroups.util.Tuple;
@@ -101,7 +102,7 @@ public class PDC extends Protocol {
                 local_addr=(Address)evt.getArg();
                 break;
             case Event.VIEW_CHANGE:
-                List<Address> members=((View)evt.getArg()).getMembers();
+                AddressSet<Address> members=((View)evt.getArg()).getMembers();
                 for(Address mbr: cache.keySet()) {
                     if(!members.contains(mbr)) {
                         cache.remove(mbr);

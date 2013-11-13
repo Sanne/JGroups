@@ -34,7 +34,7 @@ public class RequestOptions {
     protected short         flags; // Message.Flag.OOB, Message.Flag.DONT_BUNDLE etc
 
     /** A list of members which should be excluded from a call */
-    protected Address[]     exclusion_list;
+    protected AddressSet<Address>  exclusion_list;
 
 
 

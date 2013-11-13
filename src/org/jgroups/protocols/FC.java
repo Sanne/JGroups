@@ -5,6 +5,7 @@ import org.jgroups.Event;
 import org.jgroups.Message;
 import org.jgroups.View;
 import org.jgroups.annotations.*;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.stack.Protocol;
 import org.jgroups.util.BoundedList;
 import org.jgroups.util.MessageBatch;
@@ -770,7 +771,7 @@ public class FC extends Protocol {
     }
 
 
-    private void handleViewChange(List<Address> mbrs) {
+    private void handleViewChange(AddressSet<Address> mbrs) {
         if(mbrs == null) return;
         if(log.isTraceEnabled()) log.trace("new membership: " + mbrs);
 

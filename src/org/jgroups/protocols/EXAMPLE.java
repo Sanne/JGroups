@@ -1,16 +1,19 @@
 
 package org.jgroups.protocols;
 
-import org.jgroups.*;
-import org.jgroups.annotations.MBean;
-import org.jgroups.annotations.Unsupported;
-import org.jgroups.stack.Protocol;
-import org.jgroups.util.MessageBatch;
-
 import java.io.DataInput;
 import java.io.DataOutput;
-import java.util.ArrayList;
-import java.util.List;
+
+import org.jgroups.Address;
+import org.jgroups.Event;
+import org.jgroups.Header;
+import org.jgroups.Message;
+import org.jgroups.View;
+import org.jgroups.annotations.MBean;
+import org.jgroups.annotations.Unsupported;
+import org.jgroups.blocks.collections.AddressSet;
+import org.jgroups.stack.Protocol;
+import org.jgroups.util.MessageBatch;
 
 
 
@@ -22,7 +25,7 @@ import java.util.List;
 @Unsupported
 @MBean(description="Sample protocol")
 public class EXAMPLE extends Protocol {
-    final List<Address> members=new ArrayList<Address>();
+    final AddressSet<Address> members=AddressSet.newEmptySet();
 
 
     /**
@@ -59,7 +62,7 @@ public class EXAMPLE extends Protocol {
         switch(evt.getType()) {
             case Event.TMP_VIEW:
             case Event.VIEW_CHANGE:
-                List<Address> new_members=((View)evt.getArg()).getMembers();
+                AddressSet<Address> new_members=((View)evt.getArg()).getMembers();
                 synchronized(members) {
                     members.clear();
                     if(new_members != null && !new_members.isEmpty())

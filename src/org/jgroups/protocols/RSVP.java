@@ -4,6 +4,7 @@ import org.jgroups.*;
 import org.jgroups.annotations.MBean;
 import org.jgroups.annotations.ManagedAttribute;
 import org.jgroups.annotations.Property;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.stack.Protocol;
 import org.jgroups.util.AckCollector;
 import org.jgroups.util.MessageBatch;
@@ -47,7 +48,7 @@ public class RSVP extends Protocol {
 
     protected TimeScheduler timer;
 
-    protected volatile List<Address> members=new ArrayList<Address>();
+    protected volatile AddressSet<Address> members=AddressSet.newEmptySet(7);
 
     protected Address local_addr;
 
@@ -285,7 +286,7 @@ public class RSVP extends Protocol {
         }
 
         /** Multicast entry */
-        protected Entry(Collection<Address> members) {
+        protected Entry(AddressSet<Address> members) {
             this.target=null;
             this.ack_collector=new AckCollector(members);
         }
@@ -316,7 +317,7 @@ public class RSVP extends Protocol {
         }
 
         protected void    ack(Address member)                         {ack_collector.ack(member);}
-        protected boolean retainAll(Collection<Address> members)      {return ack_collector.retainAll(members);}
+        protected boolean retainAll(AddressSet<Address> members)      {return ack_collector.retainAll(members);}
         protected int     size()                                      {return ack_collector.size();}
         protected void    block(long timeout) throws TimeoutException {ack_collector.waitForAllAcks(timeout);}
         protected void    destroy()                                   {cancelTask();}

@@ -1,19 +1,35 @@
 package org.jgroups.demos.applets;
 
 import java.applet.Applet;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Label;
+import java.awt.Panel;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
-import java.io.*;
-import java.util.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
-import org.jgroups.*;
+import org.jgroups.Address;
+import org.jgroups.Channel;
+import org.jgroups.JChannel;
+import org.jgroups.Message;
+import org.jgroups.ReceiverAdapter;
+import org.jgroups.View;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.logging.Log;
 import org.jgroups.logging.LogFactory;
-import org.jgroups.util.Util;
 
 
 public class DrawApplet extends Applet implements MouseMotionListener, ActionListener {
@@ -54,7 +70,7 @@ public class DrawApplet extends Applet implements MouseMotionListener, ActionLis
             channel=new JChannel(props);
             channel.setReceiver(new ReceiverAdapter() {
                 public void viewAccepted(View v) {
-                    List<Address> mbrs=v.getMembers();
+                    AddressSet<Address> mbrs=v.getMembers();
                     System.out.println("View accepted: " + v);
                     member_size=v.size();
 

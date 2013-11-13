@@ -2,6 +2,7 @@ package org.jgroups.protocols;
 
 import org.jgroups.*;
 import org.jgroups.annotations.*;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.stack.Protocol;
 import org.jgroups.util.*;
 
@@ -284,7 +285,7 @@ public class FD_ALL extends Protocol {
 
 
     private void handleViewChange(View v) {
-        List<Address> mbrs=v.getMembers();
+        AddressSet<Address> mbrs=v.getMembers();
 
         synchronized(this) {
             members.clear();

@@ -2,10 +2,7 @@ package org.jgroups.util;
 
 import org.jgroups.Address;
 import org.jgroups.TimeoutException;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import org.jgroups.blocks.collections.AddressSet;
 
 /**
  * Collects acks from a number of nodes, waits for all acks. Can also be time bounded
@@ -13,29 +10,27 @@ import java.util.List;
  */
 public class AckCollector {
     /** List of members from whom we haven't received an ACK yet */
-    protected final List<Address>     missing_acks;
+    protected final AddressSet<Address>     missing_acks;
     protected final Promise<Boolean>  all_acks_received=new Promise<Boolean>();
-    protected final List<Address>     suspected_mbrs=new ArrayList<Address>(5);
+    protected final AddressSet<Address>     suspected_mbrs=AddressSet.newEmptySet(5);
     protected int                     expected_acks;
 
 
     public AckCollector() {
-        missing_acks=new ArrayList<Address>();
+        missing_acks=AddressSet.newEmptySet();
         expected_acks=0;
     }
 
-    public AckCollector(Collection<Address> members) {
-        missing_acks=new ArrayList<Address>(members != null? members.size() : 10);
+    public AckCollector(AddressSet<Address> members) {
+        missing_acks=AddressSet.newEmptySet(members != null? members.size() : 10);
         addAll(members);
     }
 
-    public AckCollector(Address ... members) {
-        missing_acks=new ArrayList<Address>(members != null? members.length : 10);
-        addAll(members);
+    public AckCollector(Address member) {
+        this(AddressSet.singleton(member));
     }
 
-
-    public synchronized void reset(Collection<Address> members) {
+    public synchronized void reset(AddressSet<Address> members) {
         suspected_mbrs.clear();
         missing_acks.clear();
         addAll(members);
@@ -69,7 +64,7 @@ public class AckCollector {
         ack(member);
     }
 
-    public boolean retainAll(Collection<Address> members) {
+    public boolean retainAll(AddressSet<Address> members) {
         if(members == null) return false;
         boolean retval=false;
         synchronized(this) {
@@ -106,16 +101,7 @@ public class AckCollector {
         return Util.printListWithDelimiter(suspected_mbrs, ", ");
     }
 
-    protected synchronized void addAll(Address ... members) {
-        if(members == null)
-            return;
-        for(Address member: members)
-            if(member != null && !missing_acks.contains(member))
-                missing_acks.add(member);
-        expected_acks=missing_acks.size();
-    }
-
-    protected synchronized void addAll(Collection<Address> members) {
+    protected synchronized void addAll(AddressSet<Address> members) {
         if(members == null)
             return;
         for(Address member: members)

@@ -3,6 +3,7 @@ package org.jgroups.protocols.pbcast;
 
 import org.jgroups.*;
 import org.jgroups.annotations.*;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.stack.Protocol;
 import org.jgroups.util.*;
 
@@ -411,7 +412,7 @@ public class STABLE extends Protocol {
     protected void resetDigest() {
         if(view == null)
             return;
-        digest=new MutableDigest(view.getMembersRaw()); // .set(getDigest());
+        digest=new MutableDigest(view.getMembers()); // .set(getDigest());
         log.trace("%s: reset digest to %s", local_addr, printDigest(digest));
         votes=new FixedSizeBitSet(view.size()); // all 0's initially
     }
@@ -439,11 +440,8 @@ public class STABLE extends Protocol {
     protected static int getRank(Address member, View v) {
         if(v == null || member == null)
             return -1;
-        Address[] members=v.getMembersRaw();
-        for(int i=0; i < members.length; i++)
-            if(member.equals(members[i]))
-                return i;
-        return -1;
+        AddressSet<Address> members = v.getMembers();
+        return members.positionOf(member);
     }
 
     protected void startStableTask() {
@@ -649,7 +647,7 @@ public class STABLE extends Protocol {
             return;
 
         final View          current_view=view;
-        final MutableDigest d=new MutableDigest(current_view.getMembersRaw()).set(getDigest());
+        final MutableDigest d=new MutableDigest(current_view.getMembers()).set(getDigest());
         Address dest=send_stable_msgs_to_coord_only? coordinator : null;
 
         if(d.allSet() || d.set(getDigest()).allSet()) // try once more if the first digest didn't match
@@ -725,7 +723,7 @@ public class STABLE extends Protocol {
     protected String printDigest(final Digest digest) {
         if(digest == null)
             return null;
-        return view != null? digest.toString(view.getMembersRaw(), false) : digest.toString();
+        return view != null? digest.toString(view.getMembers(), false) : digest.toString();
     }
 
     /* ------------------------------------End of Private Methods ------------------------------------- */

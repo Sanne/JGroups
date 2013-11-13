@@ -5,6 +5,7 @@ import org.jgroups.*;
 import org.jgroups.annotations.LocalAddress;
 import org.jgroups.annotations.MBean;
 import org.jgroups.annotations.Property;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.conf.PropertyConverters;
 import org.jgroups.stack.IpAddress;
 import org.jgroups.stack.Protocol;
@@ -150,7 +151,7 @@ public class VERIFY_SUSPECT extends Protocol implements Runnable {
     /**
      * Removes all elements from suspects that are <em>not</em> in the new membership
      */
-    protected void adjustSuspectedMembers(List<Address> new_mbrship) {
+    protected void adjustSuspectedMembers(AddressSet<Address> new_mbrship) {
         synchronized(suspects) {
             for(Iterator<Entry> it=suspects.iterator(); it.hasNext();) {
                 Entry entry=it.next();

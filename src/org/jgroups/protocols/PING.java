@@ -1,8 +1,7 @@
 package org.jgroups.protocols;
 
 import org.jgroups.PhysicalAddress;
-
-import java.util.Collection;
+import org.jgroups.blocks.collections.AddressSet;
 
 
 /**
@@ -19,7 +18,7 @@ public class PING extends Discovery {
         return true;
     }
 
-    public Collection<PhysicalAddress> fetchClusterMembers(String cluster_name) {
+    public AddressSet<PhysicalAddress> fetchClusterMembers(String cluster_name) {
         return null;  // multicast the discovery request
     }
 

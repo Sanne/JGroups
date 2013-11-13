@@ -6,6 +6,7 @@ import org.jgroups.Event;
 import org.jgroups.PhysicalAddress;
 import org.jgroups.annotations.ManagedOperation;
 import org.jgroups.annotations.Property;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.conf.PropertyConverters;
 import org.jgroups.stack.RouterStub;
 import org.jgroups.stack.RouterStubManager;
@@ -118,13 +119,13 @@ public class TCPGOSSIP extends Discovery {
         stubManager.disconnectStubs();
     }
 
-    public Collection<PhysicalAddress> fetchClusterMembers(String cluster_name) {
-        Set<PhysicalAddress> retval=new HashSet<PhysicalAddress>();
+    public AddressSet<PhysicalAddress> fetchClusterMembers(String cluster_name) {
         if(group_addr == null) {
             if(log.isErrorEnabled())
                 log.error("cluster_name is null, cannot get membership");
-            return retval;
+            return AddressSet.newEmptySet(0);
         }
+        AddressSet<PhysicalAddress> retval=AddressSet.newEmptySet(7);
 
         if(log.isTraceEnabled())
             log.trace("fetching members from GossipRouter(s)");
@@ -196,9 +197,9 @@ public class TCPGOSSIP extends Discovery {
     protected void connectAllStubs(String group, Address logical_addr) {
         String logical_name=org.jgroups.util.UUID.get(logical_addr);
         PhysicalAddress physical_addr=(PhysicalAddress)down_prot.down(new Event(Event.GET_PHYSICAL_ADDRESS, local_addr));
-        List<PhysicalAddress> physical_addrs=physical_addr != null? new ArrayList<PhysicalAddress>() : null;
+        AddressSet<PhysicalAddress> physical_addrs=null;
         if(physical_addr != null)
-            physical_addrs.add(physical_addr);
+            physical_addrs = AddressSet.singleton(physical_addr);
 
         for (RouterStub stub : stubManager.getStubs()) {
             try {
@@ -217,9 +218,9 @@ public class TCPGOSSIP extends Discovery {
     protected void connect(RouterStub stub, String group, Address logical_addr) {
         String logical_name = org.jgroups.util.UUID.get(logical_addr);
         PhysicalAddress physical_addr = (PhysicalAddress) down_prot.down(new Event(Event.GET_PHYSICAL_ADDRESS, local_addr));
-        List<PhysicalAddress> physical_addrs = physical_addr != null ? new ArrayList<PhysicalAddress>(): null;
+        AddressSet<PhysicalAddress> physical_addrs = null;
         if (physical_addr != null)
-            physical_addrs.add(physical_addr);
+            physical_addrs = AddressSet.singleton(physical_addr);
 
         try {
             if (log.isTraceEnabled())

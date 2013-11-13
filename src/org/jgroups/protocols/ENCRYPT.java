@@ -5,6 +5,7 @@ import org.jgroups.*;
 import org.jgroups.annotations.GuardedBy;
 import org.jgroups.annotations.MBean;
 import org.jgroups.annotations.Property;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.stack.Protocol;
 import org.jgroups.util.MessageBatch;
 import org.jgroups.util.QueueClosedException;
@@ -12,6 +13,7 @@ import org.jgroups.util.Util;
 
 import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
+
 import java.io.*;
 import java.security.*;
 import java.security.cert.CertificateException;
@@ -525,7 +527,7 @@ public class ENCRYPT extends Protocol {
     private synchronized void handleViewChange(View view, boolean makeServer) {
 
         // if view is a bit broken set me as keyserver
-        List<Address> members = view.getMembers();
+        AddressSet<Address> members = view.getMembers();
         if (members == null || members.isEmpty() || members.get(0) == null) { 
             becomeKeyServer(local_addr, false);
             return;

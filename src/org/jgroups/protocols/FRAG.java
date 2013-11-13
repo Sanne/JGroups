@@ -8,6 +8,7 @@ import org.jgroups.View;
 import org.jgroups.annotations.MBean;
 import org.jgroups.annotations.ManagedAttribute;
 import org.jgroups.annotations.Property;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.stack.Protocol;
 import org.jgroups.util.*;
 
@@ -56,7 +57,7 @@ public class FRAG extends Protocol {
     private final FragmentationList  fragment_list=new FragmentationList();
 
     private AtomicInteger            curr_id=new AtomicInteger(1);
-    private final List<Address>      members=new ArrayList<Address>(11);
+    private final AddressSet<Address>      members=AddressSet.newEmptySet(11);
     
     
  
@@ -169,8 +170,8 @@ public class FRAG extends Protocol {
 
 
     private void handleViewChange(View view) {
-        List<Address> new_mbrs=view.getMembers();
-        List<Address> left_mbrs=Util.determineLeftMembers(members, new_mbrs);
+        AddressSet<Address> new_mbrs=view.getMembers();
+        AddressSet<Address> left_mbrs=Util.determineLeftMembers(members, new_mbrs);
         members.clear();
         members.addAll(new_mbrs);
 

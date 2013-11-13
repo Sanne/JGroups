@@ -1,22 +1,36 @@
 package org.jgroups.demos.wb;
 
 
-import org.jgroups.Address;
-import org.jgroups.blocks.MethodCall;
-import org.jgroups.blocks.RequestOptions;
-import org.jgroups.blocks.ResponseMode;
-import org.jgroups.logging.Log;
-import org.jgroups.logging.LogFactory;
-import org.jgroups.util.Util;
-
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Image;
+import java.awt.Panel;
+import java.awt.Point;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.io.*;
-import java.util.*;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.List;
+
+import org.jgroups.Address;
+import org.jgroups.blocks.MethodCall;
+import org.jgroups.blocks.RequestOptions;
+import org.jgroups.blocks.ResponseMode;
+import org.jgroups.blocks.collections.AddressSet;
+import org.jgroups.logging.Log;
+import org.jgroups.logging.LogFactory;
+import org.jgroups.util.Util;
 
 
 public class GraphPanel extends Panel implements MouseListener, MouseMotionListener {
@@ -110,7 +124,7 @@ public class GraphPanel extends Panel implements MouseListener, MouseMotionListe
 
 
     // Removes nodes that are not in the view
-    public void adjustNodes(java.util.List<Address> v) {
+    public void adjustNodes(AddressSet<Address> v) {
         Node n;
         boolean removed=false;
 

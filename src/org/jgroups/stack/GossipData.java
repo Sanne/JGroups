@@ -5,6 +5,7 @@ package org.jgroups.stack;
 import org.jgroups.Address;
 import org.jgroups.Global;
 import org.jgroups.PhysicalAddress;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.util.SizeStreamable;
 import org.jgroups.util.Util;
 
@@ -25,8 +26,8 @@ public class GossipData implements SizeStreamable {
     String         group=null;  // CONNECT, GET_REQ and GET_RSP
     Address        addr=null;   // CONNECT
     String         logical_name=null;
-    List<Address>  mbrs=null;   // GET_RSP
-    Collection<PhysicalAddress> physical_addrs=null; // GET_RSP, GET_REQ
+    AddressSet<Address>  mbrs=null;   // GET_RSP
+    AddressSet<PhysicalAddress> physical_addrs=null; // GET_RSP, GET_REQ
     byte[]         buffer=null; // MESSAGE
     int            offset=0;
     int            length=0;
@@ -44,17 +45,17 @@ public class GossipData implements SizeStreamable {
         this.addr=addr;
     }
 
-    public GossipData(byte type, String group, Address addr, List<Address> mbrs) {
+    public GossipData(byte type, String group, Address addr, AddressSet<Address> mbrs) {
         this(type, group, addr);
         this.mbrs=mbrs;
     }
 
-    public GossipData(byte type, String group, Address addr, List<Address> mbrs, List<PhysicalAddress> physical_addrs) {
+    public GossipData(byte type, String group, Address addr, AddressSet<Address> mbrs, AddressSet<PhysicalAddress> physical_addrs) {
         this(type, group, addr, mbrs);
         this.physical_addrs=physical_addrs;
     }
 
-    public GossipData(byte type, String group, Address addr, String logical_name, List<PhysicalAddress> phys_addrs) {
+    public GossipData(byte type, String group, Address addr, String logical_name, AddressSet<PhysicalAddress> phys_addrs) {
         this(type, group, addr);
         this.logical_name=logical_name;
         this.physical_addrs=phys_addrs;
@@ -76,14 +77,14 @@ public class GossipData implements SizeStreamable {
     public String           getGroup()   {return group;}
     public Address          getAddress() {return addr;}
     public String           getLogicalName() {return logical_name;}
-    public List<Address>    getMembers() {return mbrs;}
+    public AddressSet<Address>    getMembers() {return mbrs;}
     public byte[]           getBuffer()  {return buffer;}
 
-    public Collection<PhysicalAddress> getPhysicalAddresses() {
+    public AddressSet<PhysicalAddress> getPhysicalAddresses() {
         return physical_addrs;
     }
 
-    public void setMembers(List<Address> mbrs) {
+    public void setMembers(AddressSet<Address> mbrs) {
         this.mbrs=mbrs;
     }
 
@@ -119,8 +120,8 @@ public class GossipData implements SizeStreamable {
         group=Util.readString(in);
         addr=Util.readAddress(in);
         logical_name=Util.readString(in);
-        mbrs=(List<Address>)Util.readAddresses(in, LinkedList.class);
-        physical_addrs=(Collection<PhysicalAddress>)Util.readAddresses(in, ArrayList.class);
+        mbrs=Util.readAddresses(in);
+        physical_addrs=Util.readPhysicalAddresses(in);
         buffer=Util.readByteBuffer(in);
         if(buffer != null) {
             offset=0;

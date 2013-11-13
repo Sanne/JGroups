@@ -5,6 +5,7 @@ import org.jgroups.annotations.MBean;
 import org.jgroups.annotations.ManagedAttribute;
 import org.jgroups.annotations.ManagedOperation;
 import org.jgroups.annotations.Property;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.conf.PropertyConverters;
 import org.jgroups.stack.Protocol;
 import org.jgroups.util.*;
@@ -101,7 +102,7 @@ public class UNICAST extends Protocol implements AgeOutCache.Handler<Address> {
     /** RetransmitTask running every xmit_interval ms */
     protected Future<?>              xmit_task;
 
-    protected volatile List<Address> members=new ArrayList<Address>(11);
+    protected volatile AddressSet<Address> members=AddressSet.newEmptySet(11);
 
     protected Address                local_addr=null;
 
@@ -522,7 +523,7 @@ public class UNICAST extends Protocol implements AgeOutCache.Handler<Address> {
 
             case Event.VIEW_CHANGE:  // remove connections to peers that are not members anymore !
                 View view=(View)evt.getArg();
-                List<Address> new_members=view.getMembers();
+                AddressSet<Address> new_members=view.getMembers();
                 Set<Address> non_members=new HashSet<Address>(send_table.keySet());
                 non_members.addAll(recv_table.keySet());
 

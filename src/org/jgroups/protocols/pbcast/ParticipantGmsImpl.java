@@ -2,20 +2,19 @@
 package org.jgroups.protocols.pbcast;
 
 import org.jgroups.*;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.util.Digest;
 import org.jgroups.util.Promise;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
-import java.util.List;
 
 
 /**
  * @author Bela Ban
  */
 public class ParticipantGmsImpl extends ServerGmsImpl {
-    private final List<Address>     suspected_mbrs=new ArrayList<Address>(11);
+    private final AddressSet<Address>     suspected_mbrs=AddressSet.newEmptySet(11);
     private final Promise<Boolean>  leave_promise=new Promise<Boolean>();
 
 
@@ -157,9 +156,9 @@ public class ParticipantGmsImpl extends ServerGmsImpl {
      * local_addr. Therefore, true is returned.
      */
     boolean wouldIBeCoordinator() {
-        List<Address> mbrs=gms.computeNewMembership(gms.members.getMembers(), null, null, suspected_mbrs);
+        AddressSet<Address> mbrs=gms.computeNewMembership(gms.members.getMembers(), null, null, suspected_mbrs);
         if(mbrs.size() < 1) return false;
-        Address new_coord=mbrs.get(0);
+        Address new_coord=mbrs.getFirst();
         return gms.local_addr.equals(new_coord);
     }
 

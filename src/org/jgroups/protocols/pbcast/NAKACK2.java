@@ -5,6 +5,7 @@ import org.jgroups.Event;
 import org.jgroups.Message;
 import org.jgroups.View;
 import org.jgroups.annotations.*;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.protocols.TP;
 import org.jgroups.stack.DiagnosticsHandler;
 import org.jgroups.stack.Protocol;
@@ -161,7 +162,7 @@ public class NAKACK2 extends Protocol implements DiagnosticsHandler.ProbeHandler
     /* -------------------------------------------------    Fields    ------------------------------------------------------------------------- */
     protected volatile boolean          is_server=false;
     protected Address                   local_addr=null;
-    protected volatile List<Address>    members=new ArrayList<Address>();
+    protected volatile AddressSet<Address>    members=AddressSet.newEmptySet();
     protected volatile View             view;
     private final AtomicLong            seqno=new AtomicLong(0); // current message sequence number (starts with 1)
 
@@ -487,7 +488,7 @@ public class NAKACK2 extends Protocol implements DiagnosticsHandler.ProbeHandler
 
             case Event.VIEW_CHANGE:
                 tmp_view=(View)evt.getArg();
-                List<Address> mbrs=tmp_view.getMembers();
+                AddressSet<Address> mbrs=tmp_view.getMembers();
                 members=mbrs;
                 view=tmp_view;
                 adjustReceivers(mbrs);
@@ -1139,7 +1140,7 @@ public class NAKACK2 extends Protocol implements DiagnosticsHandler.ProbeHandler
      * Removes old members from xmit-table and adds new members to xmit-table (at seqnos hd=0, hr=0).
      * This method is not called concurrently
      */
-    protected void adjustReceivers(List<Address> members) {
+    protected void adjustReceivers(AddressSet<Address> members) {
         Set<Address> keys=xmit_table.keySet();
 
         // remove members which left

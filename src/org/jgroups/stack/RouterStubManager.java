@@ -1,18 +1,22 @@
 
 package org.jgroups.stack;
 
+import java.net.InetAddress;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
 import org.jgroups.Address;
 import org.jgroups.Event;
 import org.jgroups.PhysicalAddress;
 import org.jgroups.annotations.GuardedBy;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.logging.Log;
 import org.jgroups.logging.LogFactory;
 import org.jgroups.util.TimeScheduler;
-
-import java.net.InetAddress;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.*;
 
 /**
  * Manages a list of RouterStubs (e.g. health checking, reconnecting etc.
@@ -116,7 +120,7 @@ public class RouterStubManager implements RouterStub.ConnectionListener {
                     String logical_name = org.jgroups.util.UUID.get(logicalAddress);
                     PhysicalAddress physical_addr = (PhysicalAddress) owner.down(new Event(
                       Event.GET_PHYSICAL_ADDRESS, logicalAddress));
-                    List<PhysicalAddress> physical_addrs = Arrays.asList(physical_addr);
+                    AddressSet<PhysicalAddress> physical_addrs = AddressSet.singleton(physical_addr);
                     stub.connect(channelName, logicalAddress, logical_name, physical_addrs);
                     if (log.isTraceEnabled()) log.trace("Reconnected " + stub);
                 } catch (Throwable ex) {

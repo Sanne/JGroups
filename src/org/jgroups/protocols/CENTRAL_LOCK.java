@@ -4,6 +4,7 @@ import org.jgroups.Address;
 import org.jgroups.View;
 import org.jgroups.annotations.ManagedAttribute;
 import org.jgroups.annotations.Property;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.blocks.locking.LockNotification;
 import org.jgroups.util.Owner;
 import org.jgroups.util.Util;
@@ -118,11 +119,11 @@ public class CENTRAL_LOCK extends Locking implements LockNotification {
         }
 
         if(is_coord && num_backups > 0) {
-            List<Address> new_backups=Util.pickNext(view.getMembers(), local_addr, num_backups);
-            List<Address> copy_locks_list=null;
+            AddressSet<Address> new_backups=Util.pickNext(view.getMembers(), local_addr, num_backups);
+            AddressSet<Address> copy_locks_list=null;
             synchronized(backups) {
                 if(!backups.equals(new_backups)) {
-                    copy_locks_list=new ArrayList<Address>(new_backups);
+                    copy_locks_list=new_backups.clone();
                     copy_locks_list.removeAll(backups);
                     backups.clear();
                     backups.addAll(new_backups);
@@ -173,7 +174,7 @@ public class CENTRAL_LOCK extends Locking implements LockNotification {
 
 
 
-    protected void copyLocksTo(List<Address> new_joiners) {
+    protected void copyLocksTo(AddressSet<Address> new_joiners) {
         Map<String,ServerLock> copy;
 
         synchronized(server_locks) {

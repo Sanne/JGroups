@@ -74,7 +74,7 @@ public class JoinRsp implements Streamable {
 
         // 2. digest
         if((flags & DIGEST_PRESENT) == DIGEST_PRESENT) {
-            digest=new Digest(view.getMembersRaw());
+            digest=new Digest(view.getMembers());
             digest.readFrom(in, false);
         }
 

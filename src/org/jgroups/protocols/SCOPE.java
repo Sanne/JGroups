@@ -4,6 +4,7 @@ import org.jgroups.*;
 import org.jgroups.util.*;
 import org.jgroups.util.ThreadFactory;
 import org.jgroups.annotations.*;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.stack.Protocol;
 
 import java.io.DataInput;
@@ -342,7 +343,7 @@ public class SCOPE extends Protocol {
     }
 
     private void handleView(View view) {
-        List<Address> members=view.getMembers();
+        AddressSet<Address> members=view.getMembers();
 
         // Remove all non members from receiver_table
         Set<Address> keys=new HashSet<Address>(queues.keySet());

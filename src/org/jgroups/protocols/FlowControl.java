@@ -8,6 +8,7 @@ import org.jgroups.annotations.MBean;
 import org.jgroups.annotations.ManagedAttribute;
 import org.jgroups.annotations.ManagedOperation;
 import org.jgroups.annotations.Property;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.stack.Protocol;
 import org.jgroups.util.MessageBatch;
 import org.jgroups.util.Util;
@@ -514,7 +515,7 @@ public abstract class FlowControl extends Protocol {
     }
 
 
-    protected void handleViewChange(List<Address> mbrs) {
+    protected void handleViewChange(AddressSet<Address> mbrs) {
         if(mbrs == null) return;
         if(log.isTraceEnabled()) log.trace("new membership: " + mbrs);
 

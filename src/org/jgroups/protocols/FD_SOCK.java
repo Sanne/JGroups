@@ -2,6 +2,7 @@ package org.jgroups.protocols;
 
 import org.jgroups.*;
 import org.jgroups.annotations.*;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.conf.PropertyConverters;
 import org.jgroups.stack.IpAddress;
 import org.jgroups.stack.Protocol;
@@ -95,7 +96,7 @@ public class FD_SOCK extends Protocol implements Runnable {
     /* --------------------------------------------- Fields ------------------------------------------------------ */
 
 
-    protected volatile List<Address> members=new ArrayList<Address>(11); // volatile eliminates the lock
+    protected volatile AddressSet<Address> members=AddressSet.newEmptySet(11); // volatile eliminates the lock
 
     protected final Set<Address>     suspected_mbrs=new CopyOnWriteArraySet<Address>();
 
@@ -327,7 +328,7 @@ public class FD_SOCK extends Protocol implements Runnable {
 
             case Event.VIEW_CHANGE:
                 View v=(View) evt.getArg();
-                final List<Address> new_mbrs=v.getMembers();
+                final AddressSet<Address> new_mbrs=v.getMembers();
 
                 members=new_mbrs;  // volatile write will ensure all reads after this see the new membership
                 suspected_mbrs.retainAll(new_mbrs);
@@ -847,7 +848,7 @@ public class FD_SOCK extends Protocol implements Runnable {
 
 
     protected Address determineCoordinator() {
-        List<Address> tmp=members;
+        AddressSet<Address> tmp=members;
         return !tmp.isEmpty()? tmp.get(0) : null;
     }
 
@@ -1185,7 +1186,7 @@ public class FD_SOCK extends Protocol implements Runnable {
         /**
          * Removes all elements from suspected_mbrs that are <em>not</em> in the new membership
          */
-        public void adjustSuspectedMembers(List<Address> new_mbrship) {
+        public void adjustSuspectedMembers(AddressSet<Address> new_mbrship) {
             if(new_mbrship == null || new_mbrship.isEmpty()) return;
             synchronized(suspects) {
                 boolean modified=suspects.retainAll(new_mbrship);

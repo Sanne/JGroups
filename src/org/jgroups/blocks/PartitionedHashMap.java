@@ -8,6 +8,7 @@ import org.jgroups.annotations.Experimental;
 import org.jgroups.annotations.ManagedAttribute;
 import org.jgroups.annotations.ManagedOperation;
 import org.jgroups.annotations.Unsupported;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.logging.Log;
 import org.jgroups.logging.LogFactory;
 import org.jgroups.util.Buffer;
@@ -101,7 +102,7 @@ public class PartitionedHashMap<K,V> implements MembershipListener {
          * listener ({@link PartitionedHashMap#addMembershipListener(org.jgroups.MembershipListener)} ) 
          * @return
          */
-        Address hash(K key, List<Address> membership);
+        Address hash(K key, AddressSet<Address> membership);
     }
 
 
@@ -231,7 +232,7 @@ public class PartitionedHashMap<K,V> implements MembershipListener {
         if(l1_cache != null)
             l1_cache.stop();
         if(migrate_data) {
-            List<Address> members_without_me=new ArrayList<Address>(view.getMembers());
+            AddressSet<Address> members_without_me=view.getMembers().clone();
             members_without_me.remove(local_addr);
 
             for(Map.Entry<K,Cache.Value<V>> entry: l2_cache.entrySet()) {
@@ -434,7 +435,7 @@ public class PartitionedHashMap<K,V> implements MembershipListener {
         private SortedMap<Short,Address> nodes=new TreeMap<Short,Address>();
         private final static int HASH_SPACE=2048; // must be > max number of nodes in a cluster, and a power of 2
 
-        public Address hash(K key, List<Address> members) {
+        public Address hash(K key, AddressSet<Address> members) {
             int index=Math.abs(key.hashCode() & (HASH_SPACE - 1));
             if(members != null && !members.isEmpty()) {
                 SortedMap<Short,Address> tmp=new TreeMap<Short,Address>(nodes);

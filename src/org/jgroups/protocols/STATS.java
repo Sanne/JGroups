@@ -7,6 +7,7 @@ import org.jgroups.Message;
 import org.jgroups.Address;
 import org.jgroups.View;
 import org.jgroups.annotations.ManagedAttribute;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.util.MessageBatch;
 
 import java.util.*;
@@ -118,7 +119,7 @@ public class STATS extends Protocol {
     }
 
     private void handleViewChange(View view) {
-        List<Address> members=view.getMembers();
+        AddressSet<Address> members=view.getMembers();
         Set tmp=new LinkedHashSet(members);
         tmp.add(null); // for null destination (= mcast)
         sent.keySet().retainAll(tmp);

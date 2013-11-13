@@ -4,16 +4,17 @@ package org.jgroups.demos;
 
 
 import org.jgroups.*;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.jmx.JmxConfigurator;
 import org.jgroups.util.Util;
 
 import javax.management.MBeanServer;
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.util.*;
-import java.util.List;
 
 
 /**
@@ -39,7 +40,7 @@ public class Draw extends ReceiverAdapter implements ActionListener, ChannelList
     private long                   state_timeout=5000;
     private boolean                use_unicasts=false;
     protected boolean              send_own_state_on_merge=true;
-    private final                  List<Address> members=new ArrayList<Address>();
+    private final                  AddressSet<Address> members=AddressSet.newEmptySet(10);
 
 
     public Draw(String props, boolean no_channel, boolean jmx, boolean use_state, long state_timeout,

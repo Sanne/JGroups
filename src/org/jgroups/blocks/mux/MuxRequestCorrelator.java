@@ -1,13 +1,12 @@
 package org.jgroups.blocks.mux;
 
-import java.util.Collection;
-
 import org.jgroups.Address;
 import org.jgroups.Message;
 import org.jgroups.blocks.RequestCorrelator;
 import org.jgroups.blocks.RequestHandler;
-import org.jgroups.blocks.RspCollector;
 import org.jgroups.blocks.RequestOptions;
+import org.jgroups.blocks.RspCollector;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.conf.ClassConfigurator;
 import org.jgroups.stack.Protocol;
 
@@ -28,7 +27,7 @@ public class MuxRequestCorrelator extends RequestCorrelator {
     }
 
     @Override
-    public void sendRequest(long requestId, Collection<Address> dest_mbrs, Message msg, RspCollector coll, RequestOptions options) throws Exception {
+    public void sendRequest(long requestId, AddressSet<Address> dest_mbrs, Message msg, RspCollector coll, RequestOptions options) throws Exception {
         msg.putHeader(MUX_ID, header);
         super.sendRequest(requestId, dest_mbrs, msg, coll, options);
     }

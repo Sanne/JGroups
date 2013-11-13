@@ -5,6 +5,7 @@ import org.jgroups.annotations.GuardedBy;
 import org.jgroups.annotations.MBean;
 import org.jgroups.annotations.ManagedAttribute;
 import org.jgroups.annotations.ManagedOperation;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.stack.Protocol;
 import org.jgroups.stack.StateTransferInfo;
 import org.jgroups.util.Digest;
@@ -269,7 +270,7 @@ public class STATE_TRANSFER extends Protocol {
 
     private void handleViewChange(View v) {
         Address       old_coord;
-        List<Address> new_members=v.getMembers();
+        AddressSet<Address> new_members=v.getMembers();
         boolean       send_up_exception=false;
 
         synchronized(members) {

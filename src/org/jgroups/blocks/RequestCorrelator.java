@@ -2,6 +2,7 @@
 package org.jgroups.blocks;
 
 import org.jgroups.*;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.conf.ClassConfigurator;
 import org.jgroups.logging.Log;
 import org.jgroups.logging.LogFactory;
@@ -113,7 +114,7 @@ public class RequestCorrelator {
     public boolean                  asyncDispatching() {return async_dispatching;}
     public RequestCorrelator        asyncDispatching(boolean flag) {async_dispatching=flag; return this;}
 
-    public void sendRequest(long id, List<Address> dest_mbrs, Message msg, RspCollector coll) throws Exception {
+    public void sendRequest(long id, AddressSet dest_mbrs, Message msg, RspCollector coll) throws Exception {
         sendRequest(id, dest_mbrs, msg, coll, new RequestOptions().setAnycasting(false));
     }
 
@@ -131,7 +132,7 @@ public class RequestCorrelator {
      * <code>receiveResponse()</code> and <code>suspect()</code> will be invoked when a message has been received
      * or a member is suspected, respectively.
      */
-    public void sendRequest(long id, Collection<Address> dest_mbrs, Message msg, RspCollector coll, RequestOptions options) throws Exception {
+    public void sendRequest(long id, AddressSet<Address> dest_mbrs, Message msg, RspCollector coll, RequestOptions options) throws Exception {
         if(transport == null) {
             if(log.isWarnEnabled()) log.warn("transport is not available !");
             return;

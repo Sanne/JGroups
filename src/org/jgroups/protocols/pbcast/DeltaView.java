@@ -3,12 +3,11 @@ package org.jgroups.protocols.pbcast;
 import org.jgroups.Address;
 import org.jgroups.View;
 import org.jgroups.ViewId;
-import org.jgroups.util.ArrayIterator;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.util.Util;
 
 import java.io.DataInput;
 import java.io.DataOutput;
-import java.util.Arrays;
 import java.util.Iterator;
 
 /**
@@ -30,17 +29,17 @@ public class DeltaView extends View {
     protected ViewId    ref_view_id;
 
     /** Members which left the view corresponding to ref_view_id */
-    protected Address[] left_members;
+    protected AddressSet<Address> left_members;
 
     /** Members which joined the view corresponding to ref_view_id */
-    protected Address[] new_members;
+    protected AddressSet<Address> new_members;
 
     public DeltaView() {
 
     }
 
 
-    public DeltaView(ViewId view_id, ViewId ref_view_id, Address[] left_members, Address[] new_members) {
+    public DeltaView(ViewId view_id, ViewId ref_view_id, AddressSet<Address> left_members, AddressSet<Address> new_members) {
         this.view_id=view_id;
         this.ref_view_id=ref_view_id;
         this.left_members=left_members;
@@ -50,8 +49,8 @@ public class DeltaView extends View {
     }
 
     public ViewId    getRefViewId()     {return ref_view_id;}
-    public Address[] getLeftMembers()   {return left_members;}
-    public Address[] getNewMembers()    {return new_members;}
+    public AddressSet<Address> getLeftMembers()   {return left_members;}
+    public AddressSet<Address> getNewMembers()    {return new_members;}
 
 
     public int serializedSize() {
@@ -79,19 +78,17 @@ public class DeltaView extends View {
     }
 
     public Iterator<Address> iterator() {
-        Address[] combined=new Address[left_members.length + new_members.length];
-        int left_len=left_members.length;
-        System.arraycopy(left_members, 0, combined, 0, left_len);
-        System.arraycopy(new_members, 0, combined, left_len, new_members.length);
-        return new ArrayIterator<Address>(combined);
+        AddressSet<Address> combined = left_members.clone();
+        combined.addAll(new_members);
+        return combined.iterator();
     }
 
     public String toString() {
         StringBuilder sb=new StringBuilder(super.toString()).append(", ref-view=").append(ref_view_id);
-        if(left_members != null && left_members.length > 0)
-            sb.append(", left=").append(Arrays.toString(left_members));
-        if(new_members != null && new_members.length > 0)
-            sb.append(", joined=").append(Arrays.toString(new_members));
+        if(left_members != null && left_members.size() > 0)
+            sb.append(", left=").append(left_members.toString());
+        if(new_members != null && new_members.size() > 0)
+            sb.append(", joined=").append(new_members.toString());
         return sb.toString();
     }
 }

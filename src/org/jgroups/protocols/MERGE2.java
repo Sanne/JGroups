@@ -6,6 +6,7 @@ import org.jgroups.Event;
 import org.jgroups.Message;
 import org.jgroups.View;
 import org.jgroups.annotations.*;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.stack.Protocol;
 import org.jgroups.util.MessageBatch;
 import org.jgroups.util.TimeScheduler;
@@ -156,7 +157,7 @@ public class MERGE2 extends Protocol {
             case Event.VIEW_CHANGE:
                 Object ret=down_prot.down(evt);
                 view=(View)evt.getArg();
-                List<Address> mbrs=view.getMembers();
+                AddressSet<Address> mbrs=view.getMembers();
                 if(mbrs == null || mbrs.isEmpty() || local_addr == null) {
                     task.stop();
                     return ret;

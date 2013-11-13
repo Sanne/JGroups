@@ -3,11 +3,11 @@ package org.jgroups.protocols.tom;
 import org.jgroups.Address;
 import org.jgroups.Global;
 import org.jgroups.Header;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.util.Util;
 
 import java.io.DataInput;
 import java.io.DataOutput;
-import java.util.ArrayList;
 import java.util.Collection;
 
 /**
@@ -27,7 +27,7 @@ public class ToaHeader extends Header {
     private byte type = 0;
     private MessageID messageID; //address and sequence number
     private long sequencerNumber;
-    private Collection<Address> destinations= new ArrayList<Address>();
+    private AddressSet<Address> destinations= AddressSet.newEmptySet();
 
     public ToaHeader() {
         messageID = new MessageID();
@@ -83,7 +83,7 @@ public class ToaHeader extends Header {
         type = in.readByte();
         messageID.readFrom(in);
         sequencerNumber = Util.readLong(in);
-        destinations= (Collection<Address>) Util.readAddresses(in, ArrayList.class);
+        destinations= Util.readAddresses(in);
     }
 
     @Override

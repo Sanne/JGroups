@@ -1,6 +1,7 @@
 package org.jgroups.util;
 
 import org.jgroups.Address;
+import org.jgroups.blocks.collections.AddressSet;
 
 import java.util.Arrays;
 
@@ -11,8 +12,8 @@ import java.util.Arrays;
  */
 public class MutableDigest extends Digest {
 
-    public MutableDigest(Address[] members) {
-        super(members, createEmptyArray(members.length *2));
+    public MutableDigest(AddressSet<Address> members) {
+        super(members, createEmptyArray(members.size() *2));
     }
 
 
@@ -47,7 +48,7 @@ public class MutableDigest extends Digest {
         if(retval.length == 0)
             return retval;
         int index=0;
-        for(int i=0; i < members.length; i++)
+        for(int i=0; i < members.size(); i++)
             if(seqnos[i*2] == -1)
                 retval[index++]=members[i];
         return retval;

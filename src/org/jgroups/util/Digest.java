@@ -3,6 +3,7 @@ package org.jgroups.util;
 import org.jgroups.Address;
 import org.jgroups.Global;
 import org.jgroups.annotations.Immutable;
+import org.jgroups.blocks.collections.AddressSet;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -28,7 +29,7 @@ import static java.lang.Math.max;
 public class Digest implements Streamable, Iterable<Digest.Entry> {
 
     // Stores the members corresponding to the seqnos. Example: members[2] --> hd=seqnos[4], hr=seqnos[5]
-    protected Address[] members;
+    protected AddressSet<Address> members;
 
     // Stores highest delivered and received seqnos. This array is double the size of members. We store HD-HR pairs,
     // so to get the HD seqno for member P at index i --> seqnos[i*2], to get the HR --> seqnos[i*2 +1]
@@ -40,7 +41,7 @@ public class Digest implements Streamable, Iterable<Digest.Entry> {
     public Digest() {
     }
 
-    public Digest(final Address[] members, long[] seqnos) {
+    public Digest(final AddressSet<Address> members, long[] seqnos) {
         if(members == null) throw new IllegalArgumentException("members is null");
         if(seqnos == null) throw new IllegalArgumentException("seqnos is null");
         this.members=members;
@@ -49,7 +50,7 @@ public class Digest implements Streamable, Iterable<Digest.Entry> {
     }
 
     /** Only used internally, don't use ! */
-    public Digest(final Address[] members) {
+    public Digest(final AddressSet members) {
         if(members == null) throw new IllegalArgumentException("members is null");
         this.members=members;
     }
@@ -71,34 +72,28 @@ public class Digest implements Streamable, Iterable<Digest.Entry> {
     }
 
     public Digest(Address sender, long highest_delivered, long highest_received) {
-        members=new Address[]{sender};
+        members= AddressSet.singleton(sender);
         seqnos=new long[]{highest_delivered,highest_received};
     }
 
     /** Don't use, this method is reserved for Bela ! :-) */
-    public Address[] getMembersRaw() {
+    public AddressSet<Address> getMembersRaw() {
         return members;
     }
 
-
     public int capacity() {
-        return members != null? members.length : 0;
+        return members != null? members.size() : 0;
     }
 
     public boolean contains(Address mbr) {
         if(mbr == null || members == null)
             return false;
-        for(Address member: members)
-            if(member != null && member.equals(mbr))
-                return true;
-        return false;
+        return members.contains(mbr);
     }
 
-    public boolean containsAll(Address ... members) {
-        for(Address member: members)
-            if(!contains(member))
-                return false;
-        return true;
+    public boolean containsAll(AddressSet<Address> members) {
+        if (members==null) return false;
+        return this.members.containsAll(members);
     }
 
 
@@ -109,7 +104,7 @@ public class Digest implements Streamable, Iterable<Digest.Entry> {
         Digest other=(Digest)obj;
          // return Arrays.equals(members, other.members) && Arrays.equals(seqnos,other.seqnos);
 
-        boolean same_mbrs=Arrays.equals(members, other.members);
+        boolean same_mbrs= AddressSet.equals(members, other.members);
         boolean same_seqnos=Arrays.equals(seqnos, other.seqnos);
 
         return same_mbrs && same_seqnos;
@@ -145,7 +140,7 @@ public class Digest implements Streamable, Iterable<Digest.Entry> {
         if(write_addrs)
             Util.writeAddresses(members, out);
         else
-            out.writeShort(members.length);
+            out.writeShort(members.size());
         for(int i=0; i < capacity(); i++)
             Util.writeLongSequence(seqnos[i * 2], seqnos[i * 2 +1], out);
     }
@@ -171,7 +166,7 @@ public class Digest implements Streamable, Iterable<Digest.Entry> {
 
     public long serializedSize(boolean with_members) {
         long retval=with_members? Util.size(members) : Global.SHORT_SIZE;
-        for(int i=0; i < members.length; i++)
+        for(int i=0; i < members.size(); i++)
             retval+=Util.size(seqnos[i*2], seqnos[i*2+1]);
         return retval;
     }
@@ -185,7 +180,7 @@ public class Digest implements Streamable, Iterable<Digest.Entry> {
         return order != null? toString(order.members, true) : toString(members, true);
     }
 
-    public String toString(final Address[] order, boolean print_highest_received) {
+    public String toString(final AddressSet<Address> order, boolean print_highest_received) {
         StringBuilder sb=new StringBuilder();
         boolean first=true;
         if(capacity() == 0) return "[]";
@@ -215,18 +210,13 @@ public class Digest implements Streamable, Iterable<Digest.Entry> {
     protected int find(Address mbr) {
         if(mbr == null || members == null)
             return -1;
-        for(int i=0; i < members.length; i++) {
-            Address member=members[i];
-            if(member != null && member.equals(mbr))
-                return i;
-        }
-        return -1;
+        return members.positionOf(mbr);
     }
 
 
     protected void createArrays(Map<Address,long[]> map) {
         int size=map.size();
-        members=new Address[size];
+        members=AddressSet.newEmptySet(2);
         seqnos=new long[size * 2];
 
         int index=0;
@@ -240,7 +230,7 @@ public class Digest implements Streamable, Iterable<Digest.Entry> {
 
 
     protected void checkPostcondition() {
-        int size=members.length;
+        int size=members.size();
         if(size*2 != seqnos.length)
             throw new IllegalArgumentException("seqnos.length (" + seqnos.length + ") is not twice the members size (" + size + ")");
     }

@@ -2,6 +2,7 @@
 package org.jgroups.blocks;
 
 import org.jgroups.*;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.blocks.mux.Muxer;
 import org.jgroups.logging.Log;
 import org.jgroups.logging.LogFactory;
@@ -45,7 +46,7 @@ public class MessageDispatcher implements AsyncRequestHandler, ChannelListener {
     protected RequestHandler                        req_handler;
     protected boolean                               async_dispatching;
     protected ProtocolAdapter                       prot_adapter;
-    protected volatile Collection<Address>          members=new HashSet<Address>();
+    protected volatile AddressSet<Address>          members=AddressSet.newEmptySet();
     protected Address                               local_addr;
     protected final Log                             log=LogFactory.getLog(getClass());
     protected boolean                               hardware_multicast_supported=false;
@@ -105,9 +106,9 @@ public class MessageDispatcher implements AsyncRequestHandler, ChannelListener {
      * If this dispatcher is using a user-provided PullPushAdapter, then need to set the members from the adapter
      * initially since viewChange has most likely already been called in PullPushAdapter.
      */
-    protected void setMembers(List<Address> new_mbrs) {
+    protected void setMembers(AddressSet<Address> new_mbrs) {
         if(new_mbrs != null)
-            members=new HashSet<Address>(new_mbrs); // volatile write - seen by a subsequent read
+            members=new_mbrs.clone(); // volatile write - seen by a subsequent read
     }
 
 
@@ -134,7 +135,7 @@ public class MessageDispatcher implements AsyncRequestHandler, ChannelListener {
         corr.start();
 
         if(channel != null) {
-            List<Address> tmp_mbrs=channel.getView() != null ? channel.getView().getMembers() : null;
+            AddressSet<Address> tmp_mbrs=channel.getView() != null ? channel.getView().getMembers() : null;
             setMembers(tmp_mbrs);
             if(channel instanceof JChannel) {
                 TP transport=channel.getProtocolStack().getTransport();
@@ -585,7 +586,7 @@ public class MessageDispatcher implements AsyncRequestHandler, ChannelListener {
 
             case Event.VIEW_CHANGE:
                 View v=(View) evt.getArg();
-                List<Address> new_mbrs=v.getMembers();
+                AddressSet<Address> new_mbrs=v.getMembers();
                 setMembers(new_mbrs);
                 if(membership_listener != null)
                     membership_listener.viewAccepted(v);

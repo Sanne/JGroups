@@ -2,6 +2,7 @@ package org.jgroups.blocks;
 
 import org.jgroups.*;
 import org.jgroups.annotations.Unsupported;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.logging.Log;
 import org.jgroups.logging.LogFactory;
 import org.jgroups.util.Util;
@@ -35,7 +36,7 @@ public class ReplicatedHashMap<K, V> extends
 
         void entryRemoved(K key);
 
-        void viewChange(View view, java.util.List<Address> mbrs_joined, java.util.List<Address> mbrs_left);
+        void viewChange(View view, AddressSet<Address> mbrs_joined, AddressSet<Address> mbrs_left);
 
         void contentsSet(Map<K,V> new_entries);
 
@@ -86,7 +87,7 @@ public class ReplicatedHashMap<K, V> extends
     private String cluster_name=null;
     // to be notified when mbrship changes
     private final Set<Notification> notifs=new CopyOnWriteArraySet<Notification>();
-    private final List<Address> members=new ArrayList<Address>(); // keeps track of all DHTs
+    private final AddressSet<Address> members=AddressSet.newEmptySet(); // keeps track of all DHTs
 
     protected final RequestOptions call_options=new RequestOptions(ResponseMode.GET_NONE, 5000);
 
@@ -500,10 +501,10 @@ public class ReplicatedHashMap<K, V> extends
     /*------------------- Membership Changes ----------------------*/
 
     public void viewAccepted(View new_view) {
-        List<Address> new_mbrs=new_view.getMembers();
+        AddressSet<Address> new_mbrs=new_view.getMembers();
 
         if(new_mbrs != null) {
-            sendViewChangeNotifications(new_view, new_mbrs, new ArrayList<Address>(members)); // notifies observers (joined, left)
+            sendViewChangeNotifications(new_view, new_mbrs, members); // notifies observers (joined, left)
             members.clear();
             members.addAll(new_mbrs);
         }
@@ -521,21 +522,21 @@ public class ReplicatedHashMap<K, V> extends
      */
     public void block() {}
 
-    void sendViewChangeNotifications(View view, List<Address> new_mbrs, List<Address> old_mbrs) {
-        List<Address> joined, left;
+    void sendViewChangeNotifications(View view, AddressSet<Address> new_mbrs, AddressSet<Address> old_mbrs) {
+        AddressSet<Address> joined, left;
 
         if((notifs.isEmpty()) || (old_mbrs == null) || (new_mbrs == null))
             return;
 
         // 1. Compute set of members that joined: all that are in new_mbrs, but not in old_mbrs
-        joined=new ArrayList<Address>();
+        joined=AddressSet.newEmptySet();
         for(Address mbr: new_mbrs) {
             if(!old_mbrs.contains(mbr))
                 joined.add(mbr);
         }
 
         // 2. Compute set of members that left: all that were in old_mbrs, but not in new_mbrs
-        left=new ArrayList<Address>();
+        left=AddressSet.newEmptySet();
         for(Address mbr: old_mbrs) {
             if(!new_mbrs.contains(mbr)) {
                 left.add(mbr);

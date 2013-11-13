@@ -6,6 +6,7 @@ import org.jgroups.annotations.MBean;
 import org.jgroups.annotations.ManagedAttribute;
 import org.jgroups.annotations.ManagedOperation;
 import org.jgroups.annotations.Property;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.stack.Protocol;
 import org.jgroups.util.BoundedHashMap;
 import org.jgroups.util.MessageBatch;
@@ -273,7 +274,7 @@ public class SEQUENCER extends Protocol {
     /* --------------------------------- Private Methods ----------------------------------- */
 
     protected void handleViewChange(View v) {
-        List<Address> mbrs=v.getMembers();
+        AddressSet<Address> mbrs=v.getMembers();
         if(mbrs.isEmpty()) return;
 
         if(view == null || view.compareTo(v) < 0)
@@ -323,7 +324,7 @@ public class SEQUENCER extends Protocol {
     // If we're becoming coordinator, we need to handle TMP_VIEW as
     // an immediate change of view. See JGRP-1452.
     private void handleTmpView(View v) {
-        List<Address> mbrs=v.getMembers();
+        AddressSet<Address> mbrs=v.getMembers();
         if(mbrs.isEmpty()) return;
 
         Address new_coord=mbrs.get(0);

@@ -4,6 +4,7 @@ import org.jgroups.*;
 import org.jgroups.annotations.MBean;
 import org.jgroups.annotations.ManagedAttribute;
 import org.jgroups.annotations.ManagedOperation;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.stack.Protocol;
 
 import java.util.Collection;
@@ -141,7 +142,7 @@ public class TOA extends Protocol implements DeliveryProtocol {
         currentView = view;
 
         //basis behavior: drop leavers message (as senders)
-        List<Address> leavers = View.leftMembers(oldView, view);
+        AddressSet<Address> leavers = View.leftMembers(oldView, view);
         deliverManager.removeLeavers(leavers);
 
         //basis behavior: avoid waiting for the acks
@@ -191,7 +192,7 @@ public class TOA extends Protocol implements DeliveryProtocol {
     }
 
 
-    private void sendTotalOrderAnycastMessage(Collection<Address> destinations, Message message) {
+    private void sendTotalOrderAnycastMessage(AddressSet destinations, Message message) {
         boolean trace = log.isTraceEnabled();
         boolean warn = log.isWarnEnabled();
 
@@ -211,7 +212,7 @@ public class TOA extends Protocol implements DeliveryProtocol {
                 log.debug("sending an AnycastAddress with 1 element");
             }
             message.putHeader(id, ToaHeader.createSingleDestinationHeader());
-            message.setDest(destinations.iterator().next());
+            message.setDest(destinations.getFirst());
             down_prot.down(new Event(Event.MSG, message));
             return;
         }

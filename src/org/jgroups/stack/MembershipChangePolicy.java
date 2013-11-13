@@ -1,9 +1,9 @@
 package org.jgroups.stack;
 
 import org.jgroups.Address;
+import org.jgroups.blocks.collections.AddressSet;
 
 import java.util.Collection;
-import java.util.List;
 
 /**
  * Policy used to determine the new membership after a membership change (join, leave) or a merge. Can be installed in
@@ -25,8 +25,8 @@ public interface MembershipChangePolicy {
      * @return The new membership. The first element of the list is the (old or existing) coordinator.
      * <em>There cannot be any duplicate members</em>
      */
-    List<Address> getNewMembership(final Collection<Address> current_members, final Collection<Address> joiners,
-                                   final Collection<Address> leavers, final Collection<Address> suspects);
+    AddressSet<Address> getNewMembership(final AddressSet<Address> current_members, final AddressSet<Address> joiners,
+                                   final AddressSet<Address> leavers, final AddressSet<Address> suspects);
 
     /**
      * Compute a new membership based on a number of subviews
@@ -35,5 +35,5 @@ public interface MembershipChangePolicy {
      * @return The new membership. The first element of the list is the (old or existing) coordinator.
      * <em>There cannot be any duplicate members</em>
      */
-    List<Address> getNewMembership(final Collection<Collection<Address>> subviews);
+    AddressSet<Address> getNewMembership(final Collection<AddressSet<Address>> subviews);
 }

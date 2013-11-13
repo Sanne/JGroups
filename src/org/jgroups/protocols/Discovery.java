@@ -5,6 +5,7 @@ import org.jgroups.annotations.MBean;
 import org.jgroups.annotations.ManagedAttribute;
 import org.jgroups.annotations.ManagedOperation;
 import org.jgroups.annotations.Property;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.protocols.pbcast.JoinRsp;
 import org.jgroups.stack.Protocol;
 import org.jgroups.util.*;
@@ -118,7 +119,7 @@ public abstract class Discovery extends Protocol {
      *         Returns an empty list if no cluster members could be found.
      * @param cluster_name
      */
-    public abstract Collection<PhysicalAddress> fetchClusterMembers(String cluster_name);
+    public abstract AddressSet<PhysicalAddress> fetchClusterMembers(String cluster_name);
 
     /** Whether or not to send each discovery request on a separate (timer) thread. If disabled,
      * a discovery request will be sent to all members fetched by {@link #fetchClusterMembers(String)} sequentially */
@@ -256,11 +257,11 @@ public abstract class Discovery extends Protocol {
 
         // https://issues.jboss.org/browse/JGRP-1670
         if(view_id == null || always_send_physical_addr_with_discovery_request)
-            data=new PingData(local_addr, null, false, UUID.get(local_addr), physical_addr != null? Arrays.asList(physical_addr) : null);
+            data=new PingData(local_addr, null, false, UUID.get(local_addr), AddressSet.singleton(physical_addr));
 
         PingHeader hdr=new PingHeader(PingHeader.GET_MBRS_REQ).clusterName(cluster_name).viewId(view_id);
 
-        Collection<PhysicalAddress> cluster_members=fetchClusterMembers(cluster_name);
+        AddressSet<PhysicalAddress> cluster_members=fetchClusterMembers(cluster_name);
         if(cluster_members == null) {
             // message needs to have DONT_BUNDLE flag: if A sends message M to B, and we need to fetch B's physical
             // address, then the bundler thread blocks until the discovery request has returned. However, we cannot send
@@ -272,11 +273,10 @@ public abstract class Discovery extends Protocol {
         else {
             if(use_disk_cache) {
                 // this only makes sense if we have PDC below us
-                Collection<PhysicalAddress> list=(Collection<PhysicalAddress>)down_prot.down(new Event(Event.GET_PHYSICAL_ADDRESSES));
+                AddressSet<PhysicalAddress> list=(AddressSet<PhysicalAddress>)down_prot.down(new Event(Event.GET_PHYSICAL_ADDRESSES));
                 if(list != null)
                     for(PhysicalAddress phys_addr: list)
-                        if(!cluster_members.contains(phys_addr))
-                            cluster_members.add(phys_addr);
+                        cluster_members.add(phys_addr);
             }
 
             if(cluster_members.isEmpty()) { // if we don't find any members, return immediately
@@ -453,7 +453,7 @@ public abstract class Discovery extends Protocol {
                                     // JGRP-1492: only return our own address, and addresses in view.
                                     if (addr.equals(local_addr) || members.contains(addr)) {
                                         PhysicalAddress physical_addr=entry.getValue();
-                                        sendDiscoveryResponse(addr, Arrays.asList(physical_addr), is_server,
+                                        sendDiscoveryResponse(addr, AddressSet.singleton(physical_addr), is_server,
                                                               hdr.view_id != null, UUID.get(addr), msg.getSrc());
                                     }
                                 }
@@ -556,7 +556,7 @@ public abstract class Discovery extends Protocol {
 
             case Event.TMP_VIEW:
             case Event.VIEW_CHANGE:
-                List<Address> tmp;
+                AddressSet<Address> tmp;
                 view=(View)evt.getArg();
                 if((tmp=view.getMembers()) != null) {
                     synchronized(members) {
@@ -644,7 +644,7 @@ public abstract class Discovery extends Protocol {
         }
     }
 
-    protected void sendDiscoveryResponse(Address logical_addr, List<PhysicalAddress> physical_addrs,
+    protected void sendDiscoveryResponse(Address logical_addr, AddressSet<PhysicalAddress> physical_addrs,
                                          boolean is_server, boolean return_view_only, String logical_name, final Address sender) {
         final PingData data=return_view_only? new PingData(logical_addr, view, is_server, null, null)
           : new PingData(logical_addr, null, view != null? view.getViewId() : null, is_server, logical_name, physical_addrs);

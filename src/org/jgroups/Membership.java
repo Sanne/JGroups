@@ -2,7 +2,7 @@
 package org.jgroups;
 
 
-import java.util.*;
+import org.jgroups.blocks.collections.AddressSet;
 
 /**
  * Represents a membership of a cluster group. Class Membership is not exposed to clients and is
@@ -14,7 +14,7 @@ import java.util.*;
  */
 public class Membership {
     /* private vector to hold all the addresses */
-    private final List<Address> members=new LinkedList<Address>();
+    private final AddressSet<Address> members= AddressSet.newEmptySet();
 
     
    /**
@@ -32,7 +32,7 @@ public class Membership {
     * @param initial_members
     *           - a list of members that belong to this membership
     */
-    public Membership(Collection<Address> initial_members) {
+    public Membership(AddressSet<Address> initial_members) {
         if(initial_members != null)
             add(initial_members);
     }
@@ -46,10 +46,10 @@ public class Membership {
     * 
     * @return a list of members
     */
-    public List<Address> getMembers() {
+    public AddressSet<Address> getMembers() {
         /*clone so that this objects members can not be manipulated from the outside*/
         synchronized(members) {
-            return new ArrayList<Address>(members);
+            return members.clone();
         }
     }
 
@@ -79,7 +79,7 @@ public class Membership {
     *            if v contains objects that don't implement the Address interface
     * 
     */
-    public final void add(Collection<Address> v) {
+    public final void add(AddressSet<Address> v) {
         if(v != null)
             for(Address addr: v)
                 add(addr);
@@ -107,7 +107,7 @@ public class Membership {
     * 
     * @param v a list of all the members to be removed
     */
-    public void remove(Collection<Address> v) {
+    public void remove(AddressSet<Address> v) {
         if(v != null) {
             synchronized(members) {
                 members.removeAll(v);
@@ -116,7 +116,7 @@ public class Membership {
     }
 
 
-    public void retainAll(Collection<Address> v) {
+    public void retainAll(AddressSet<Address> v) {
         if(v != null) {
             synchronized(members) {
                 members.retainAll(v);
@@ -142,7 +142,7 @@ public class Membership {
     * @param v
     *           - a vector containing all the members this membership will contain
     */
-    public void set(Collection<Address> v) {
+    public void set(AddressSet<Address> v) {
         clear();
         add(v);
     }
@@ -174,7 +174,7 @@ public class Membership {
      * @param new_mems - a vector containing a list of members (Address) to be added to this membership
      * @param suspects - a vector containing a list of members (Address) to be removed from this membership
      */
-    public void merge(Collection<Address> new_mems, Collection<Address> suspects) {
+    public void merge(AddressSet<Address> new_mems, AddressSet<Address> suspects) {
         remove(suspects);
         add(new_mems);
     }
@@ -196,7 +196,7 @@ public class Membership {
 
     public void sort() {
         synchronized(members) {
-            Collections.sort(members);
+            members.sort();
         }
     }
 
@@ -209,7 +209,7 @@ public class Membership {
      * @return an exact copy of this membership
      */
     public Membership copy() {
-        return new Membership(this.members);
+        return new Membership(this.members.clone());
     }
 
 

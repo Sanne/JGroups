@@ -5,6 +5,7 @@ import org.jgroups.annotations.MBean;
 import org.jgroups.annotations.ManagedAttribute;
 import org.jgroups.annotations.ManagedOperation;
 import org.jgroups.annotations.Property;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.blocks.locking.AwaitInfo;
 import org.jgroups.blocks.locking.LockInfo;
 import org.jgroups.blocks.locking.LockNotification;
@@ -297,7 +298,7 @@ abstract public class Locking extends Protocol {
     protected void handleView(View view) {
         this.view=view;
         log.debug("view=%s", view);
-        List<Address> members=view.getMembers();
+        AddressSet<Address> members=view.getMembers();
         List<Response> responses=new ArrayList<Response>();
         for(Map.Entry<String,ServerLock> entry: server_locks.entrySet()) {
             String lock_name=entry.getKey();
@@ -668,7 +669,7 @@ abstract public class Locking extends Protocol {
             return processQueue();
         }
 
-        protected Response handleView(List<Address> members) {
+        protected Response handleView(AddressSet<Address> members) {
             if(current_owner != null && !members.contains(current_owner.getAddress())) {
                 Owner tmp=current_owner;
                 setOwner(null);

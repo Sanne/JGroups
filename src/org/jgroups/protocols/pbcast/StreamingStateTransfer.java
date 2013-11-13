@@ -2,6 +2,7 @@ package org.jgroups.protocols.pbcast;
 
 import org.jgroups.*;
 import org.jgroups.annotations.*;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.stack.IpAddress;
 import org.jgroups.stack.Protocol;
 import org.jgroups.stack.StateTransferInfo;
@@ -424,7 +425,7 @@ public abstract class StreamingStateTransfer extends Protocol {
     }
 
     protected void handleViewChange(View v) {
-        List<Address> new_members=v.getMembers();
+        AddressSet<Address> new_members=v.getMembers();
         synchronized(members) {
             members.clear();
             members.addAll(new_members);

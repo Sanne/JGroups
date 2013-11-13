@@ -6,6 +6,7 @@ package org.jgroups.protocols;
 
 import org.jgroups.Address;
 import org.jgroups.View;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.util.Owner;
 
 import java.util.ArrayList;
@@ -69,7 +70,7 @@ public class PEER_LOCK extends Locking {
 
     public void handleView(View view) {
         super.handleView(view);
-        List<Address> members=view.getMembers();
+        AddressSet<Address> members=view.getMembers();
         for(Map<Owner,ClientLock> map: client_lock_table.values()) {
             for(ClientLock lock: map.values())
                 ((PeerLock)lock).retainAll(members);
@@ -90,7 +91,7 @@ public class PEER_LOCK extends Locking {
             super(name);
         }
 
-        protected synchronized void retainAll(List<Address> members) {
+        protected synchronized void retainAll(AddressSet<Address> members) {
             if(grants.isEmpty())
                 return;
             grants.retainAll(members);

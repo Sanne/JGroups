@@ -3,6 +3,7 @@
 package org.jgroups;
 
 import org.jgroups.annotations.Immutable;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.util.Util;
 
 import java.io.DataInput;
@@ -38,16 +39,10 @@ public class MergeView extends View {
     * @param members Contains a list of all the members in the view, can be empty but not null.
     * @param subgroups A list of Views representing the former subgroups
     */
-    public MergeView(ViewId view_id, List<Address> members, List<View> subgroups) {
+    public MergeView(ViewId view_id, AddressSet<Address> members, List<View> subgroups) {
         super(view_id, members);
         this.subgroups=listToArray(subgroups);
     }
-
-    public MergeView(ViewId view_id, Address[] members, List<View> subgroups) {
-        super(view_id, members);
-        this.subgroups=listToArray(subgroups);
-    }
-
 
    /**
     * Creates a new view
@@ -57,7 +52,7 @@ public class MergeView extends View {
     * @param members Contains a list of all the members in the view, can be empty but not null.
     * @param subgroups A list of Views representing the former subgroups
     */
-    public MergeView(Address creator, long id, List<Address> members, List<View> subgroups) {
+    public MergeView(Address creator, long id, AddressSet<Address> members, List<View> subgroups) {
         super(creator, id, members);
         this.subgroups=listToArray(subgroups);
     }
@@ -136,10 +131,11 @@ public class MergeView extends View {
                 int index=in.readShort();
                 Address creator=index >= 0 ? get(index) : Util.readAddress(in);
                 long id=in.readLong();
-                Address[] mbrs=new Address[in.readShort()];
-                for(int j=0; j < mbrs.length; j++) {
+                int size = in.readShort();
+                AddressSet<Address> mbrs=AddressSet.newEmptySet(size);
+                for(int j=0; j < size; j++) {
                     index=in.readShort();
-                    mbrs[j]=index >= 0? get(index) : Util.readAddress(in);
+                    mbrs.add(index >= 0? get(index) : Util.readAddress(in));
                 }
                 try {
                     View view=View.create(creator, id, mbrs);
@@ -185,16 +181,12 @@ public class MergeView extends View {
     }
 
     protected int get(Address member) {
-        if(member == null)
-            return -1;
-        for(int i=0; i < members.length; i++)
-            if(member.equals(members[i]))
-                return i;
-        return -1;
+        return members.positionOf(member);
     }
 
     protected Address get(int index) {
-        return members != null && index >= 0 && index < members.length? members[index] : null;
+        if (members==null) return null;
+        return members.get(index);
     }
 
 }

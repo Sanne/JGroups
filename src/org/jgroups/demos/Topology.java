@@ -4,6 +4,7 @@ package org.jgroups.demos;
 
 
 import org.jgroups.*;
+import org.jgroups.blocks.collections.AddressSet;
 
 import java.awt.*;
 import java.awt.event.WindowEvent;
@@ -165,7 +166,7 @@ public class Topology extends Frame implements WindowListener {
                 setInternalState(view.getMembers());
             }
 
-            public void setInternalState(java.util.List<Address> mbrs) {
+            public void setInternalState(AddressSet<Address> mbrs) {
                 members.removeAllElements();
                 for(Address mbr: mbrs)
                     addNode(mbr);

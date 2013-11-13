@@ -1,9 +1,9 @@
 package org.jgroups;
 
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.util.Util;
 
 import java.io.*;
-import java.util.*;
 
 /**
  * This type of address represents a subset of the cluster members in which the total order properties must be applied,
@@ -13,47 +13,26 @@ import java.util.*;
  * @since 3.1
  */
 public class AnycastAddress implements Address {
-    protected Collection<Address> destinations = new ArrayList<Address>(5);
+    protected AddressSet destinations = AddressSet.newEmptySet();
     private static final long     serialVersionUID=-3133792315497822421L;
 
     public AnycastAddress() {
     }
 
-    public AnycastAddress(Collection<Address> addresses) {
+    public AnycastAddress(AddressSet addresses) {
         addAll(addresses);
     }
 
-    public AnycastAddress(Address ... addresses) {
-        add(addresses);
+    public void addAll(AddressSet addresses) {
+        destinations.addAll(addresses);
     }
 
-    public void add(Address ... addresses) {
-        if(addresses == null || addresses.length == 0) return;
-        for(Address address: addresses)
-            _add(address);
-    }
-
-    protected void _add(Address address) {
-        if(!destinations.contains(address))
-            destinations.add(address);
-    }
-
-    public void addAll(Collection<Address> addresses) {
-        if(addresses != null && !addresses.isEmpty())
-            for(Address address: addresses)
-                _add(address);
-    }
-
-    public Collection<Address> getAddresses() {
+    public AddressSet getAddresses() {
         return destinations;
     }
 
     public int size() {
-        int size = Global.INT_SIZE;
-        for(Address address : destinations) {
-            size += Util.size(address);
-        }
-        return size;
+        return destinations.size();
     }
 
     @Override
@@ -63,11 +42,7 @@ public class AnycastAddress implements Address {
 
     @Override
     public int hashCode() {
-        int hc = 0;
-        for(Address address : destinations) {
-            hc += address.hashCode();
-        }
-        return hc;
+        return destinations.hashCode();
     }
 
     @Override
@@ -79,8 +54,7 @@ public class AnycastAddress implements Address {
 
         AnycastAddress other = (AnycastAddress) obj;
 
-        return other == this || (this.destinations.containsAll(other.destinations) &&
-                other.destinations.containsAll(this.destinations));
+        return other == this || this.destinations.equals(other.destinations);
     }
 
     public int compareTo(Address o) {
@@ -110,7 +84,7 @@ public class AnycastAddress implements Address {
 
     @Override
     public void readFrom(DataInput in) throws Exception {
-        destinations = (Collection<Address>) Util.readAddresses(in, ArrayList.class);
+        destinations = Util.readAddresses(in);
     }
 
     @Override

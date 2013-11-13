@@ -2,6 +2,7 @@ package org.jgroups.protocols;
 
 import org.jgroups.*;
 import org.jgroups.annotations.*;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.stack.AddressGenerator;
 import org.jgroups.stack.IpAddress;
 import org.jgroups.stack.Protocol;
@@ -265,7 +266,7 @@ public class RELAY extends Protocol {
     }
 
     protected void handleView(final View view) {
-        List<Address> new_mbrs=null;
+        AddressSet<Address> new_mbrs=null;
         if(local_view != null)
             new_mbrs=Util.newMembers(local_view.getMembers(), view.getMembers());
         local_view=view;
@@ -409,7 +410,7 @@ public class RELAY extends Protocol {
             }
         });
 
-        List<Address> combined_members=new ArrayList<Address>();
+        AddressSet<Address> combined_members=AddressSet.newEmptySet(20);
         for(View view: views)
             combined_members.addAll(view.getMembers());
 
@@ -470,12 +471,12 @@ public class RELAY extends Protocol {
 
 
     protected void sendViewOnLocalCluster(View remote_view, View global_view,
-                                          boolean use_seperate_thread, List<Address> new_mbrs) {
+                                          boolean use_seperate_thread, AddressSet<Address> new_mbrs) {
         sendViewOnLocalCluster(ViewData.create(remote_view, global_view), use_seperate_thread, new_mbrs);
     }
 
 
-    protected void sendViewOnLocalCluster(ViewData data, boolean use_seperate_thread, final List<Address> new_mbrs) {
+    protected void sendViewOnLocalCluster(ViewData data, boolean use_seperate_thread, final AddressSet<Address> new_mbrs) {
         try {
             final byte[] buffer=Util.streamableToByteBuffer(data);
             final List<Address> destinations=new ArrayList<Address>();
@@ -555,11 +556,7 @@ public class RELAY extends Protocol {
                                                                               msg.getOffset(), msg.getLength());
                         // replace addrs with proxies
                         if(data.remote_view != null) {
-                            List<Address> mbrs=new LinkedList<Address>();
-                            for(Address mbr: data.remote_view.getMembers()) {
-                                mbrs.add(mbr);
-                            }
-                            data.remote_view=new View(data.remote_view.getViewId(), mbrs);
+                            data.remote_view=new View(data.remote_view.getViewId(), data.remote_view.getMembers());
                         }
                         boolean merge=remote_view == null;
                         stopRemoteViewFetcher();

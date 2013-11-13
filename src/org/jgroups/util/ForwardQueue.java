@@ -1,12 +1,5 @@
 package org.jgroups.util;
 
-import org.jgroups.Address;
-import org.jgroups.Event;
-import org.jgroups.Message;
-import org.jgroups.logging.Log;
-import org.jgroups.stack.Protocol;
-
-import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.concurrent.ConcurrentMap;
@@ -15,6 +8,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import org.jgroups.Address;
+import org.jgroups.Event;
+import org.jgroups.Message;
+import org.jgroups.blocks.collections.AddressSet;
+import org.jgroups.logging.Log;
+import org.jgroups.stack.Protocol;
 
 /**
  * Forwards messages in FIFO order to a destination. Uses IDs to prevent duplicates. Used by
@@ -130,7 +130,7 @@ public class ForwardQueue {
         up_prot.up(new Event(Event.MSG, msg));
     }
 
-    public void flush(Address new_target, final List<Address> mbrs) {
+    public void flush(Address new_target, final AddressSet<Address> mbrs) {
         delivery_table.keySet().retainAll(mbrs);
         if(new_target != null) {
             stopFlusher();

@@ -8,6 +8,7 @@ import org.jgroups.annotations.Experimental;
 import org.jgroups.annotations.ManagedAttribute;
 import org.jgroups.annotations.ManagedOperation;
 import org.jgroups.annotations.Unsupported;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.logging.Log;
 import org.jgroups.logging.LogFactory;
 import org.jgroups.util.*;
@@ -113,13 +114,13 @@ public class ReplCache<K,V> implements MembershipListener, Cache.ChangeListener 
          * @param replication_count
          * @return
          */
-        List<Address> hash(K key, short replication_count);
+        AddressSet<Address> hash(K key, short replication_count);
 
         /**
          * When the topology changes, this method will be called. Implementations will typically cache the node list
          * @param nodes
          */
-        void installNodes(List<Address> nodes);
+        void installNodes(AddressSet<Address> nodes);
     }
 
 
@@ -291,7 +292,7 @@ public class ReplCache<K,V> implements MembershipListener, Cache.ChangeListener 
         if(l1_cache != null)
             l1_cache.stop();
         if(migrate_data) {
-            List<Address> members_without_me=new ArrayList<Address>(view.getMembers());
+            AddressSet<Address> members_without_me=view.getMembers().clone();
             members_without_me.remove(local_addr);
 
             HashFunction<K> tmp_hash_function=hash_function_factory.create();
@@ -309,7 +310,7 @@ public class ReplCache<K,V> implements MembershipListener, Cache.ChangeListener 
                 if(repl_count != 1) // we only handle keys which are not replicated and which are stored by us
                     continue;
 
-                List<Address> nodes=tmp_hash_function.hash(key, repl_count);
+                AddressSet<Address> nodes=tmp_hash_function.hash(key, repl_count);
                 if(nodes == null || nodes.isEmpty())
                     continue;
                 if(!nodes.contains(local_addr)) {
@@ -513,7 +514,7 @@ public class ReplCache<K,V> implements MembershipListener, Cache.ChangeListener 
                     accept=true;
                 }
                 else {
-                    List<Address> selected_hosts=hash_function != null? hash_function.hash(key, repl_count) : null;
+                    AddressSet<Address> selected_hosts=hash_function != null? hash_function.hash(key, repl_count) : null;
                     if(selected_hosts != null) {
                         if(log.isTraceEnabled())
                             log.trace("local=" + local_addr + ", hosts=" + selected_hosts);
@@ -573,7 +574,7 @@ public class ReplCache<K,V> implements MembershipListener, Cache.ChangeListener 
 
 
     public void viewAccepted(final View new_view) {
-        final List<Address> old_nodes=this.view != null? new ArrayList<Address>(this.view.getMembers()) : null;
+        final AddressSet<Address> old_nodes=this.view != null? this.view.getMembers().clone() : null;
 
         this.view=new_view;
         if(log.isDebugEnabled())
@@ -588,7 +589,7 @@ public class ReplCache<K,V> implements MembershipListener, Cache.ChangeListener 
         if(old_nodes != null) {
             timer.schedule(new Runnable() {
                 public void run() {
-                    rebalance(old_nodes, new ArrayList<Address>(new_view.getMembers()));
+                    rebalance(old_nodes, new_view.getMembers().clone());
                 }
             }, 100, TimeUnit.MILLISECONDS);
         }
@@ -643,7 +644,7 @@ public class ReplCache<K,V> implements MembershipListener, Cache.ChangeListener 
 
 
 
-    private void rebalance(List<Address> old_nodes, List<Address> new_nodes) {
+    private void rebalance(AddressSet<Address> old_nodes, AddressSet<Address> new_nodes) {
         HashFunction<K> old_func=hash_function_factory.create();
         old_func.installNodes(old_nodes);
 
@@ -671,7 +672,7 @@ public class ReplCache<K,V> implements MembershipListener, Cache.ChangeListener 
             }
             V real_value=tmp.getVal();
             short repl_count=tmp.getReplicationCount();
-            List<Address> new_mbrs=Util.newMembers(old_nodes, new_nodes);
+            AddressSet<Address> new_mbrs=Util.newMembers(old_nodes, new_nodes);
 
             if(repl_count == -1) {
                 if(is_coord) {
@@ -681,7 +682,7 @@ public class ReplCache<K,V> implements MembershipListener, Cache.ChangeListener 
                 }
             }
             else if(repl_count == 1) {
-                List<Address> tmp_nodes=new_func.hash(key, repl_count);
+                AddressSet<Address> tmp_nodes=new_func.hash(key, repl_count);
                 if(!tmp_nodes.isEmpty()) {
                     Address mbr=tmp_nodes.get(0);
                     if(!mbr.equals(local_addr)) {
@@ -691,8 +692,8 @@ public class ReplCache<K,V> implements MembershipListener, Cache.ChangeListener 
                 }
             }
             else if(repl_count > 1) {
-                List<Address> tmp_old=old_func.hash(key, repl_count);
-                List<Address> tmp_new=new_func.hash(key, repl_count);
+                AddressSet<Address> tmp_old=old_func.hash(key, repl_count);
+                AddressSet<Address> tmp_new=new_func.hash(key, repl_count);
 
                 if(log.isTraceEnabled())
                     log.trace("old nodes: " + tmp_old + "\nnew nodes: " + tmp_new);
@@ -780,11 +781,11 @@ public class ReplCache<K,V> implements MembershipListener, Cache.ChangeListener 
         private final static int HASH_SPACE=2048; // must be > max number of nodes in a cluster and a power of 2
         private final static int FACTOR=3737; // to better spread the node out across the space
 
-        public List<Address> hash(K key, short replication_count) {
+        public AddressSet<Address> hash(K key, short replication_count) {
             int index=Math.abs(key.hashCode() & (HASH_SPACE - 1));
             
             Set<Address> results=new LinkedHashSet<Address>();
-            List<Address> retval=new ArrayList<Address>();
+            AddressSet<Address> retval=AddressSet.newEmptySet();
 
             SortedMap<Short, Address> tailmap=nodes.tailMap((short)index);
             int count=0;
@@ -809,7 +810,7 @@ public class ReplCache<K,V> implements MembershipListener, Cache.ChangeListener 
             return retval;
         }
 
-        public void installNodes(List<Address> new_nodes) {
+        public void installNodes(AddressSet<Address> new_nodes) {
             nodes.clear();
             for(Address node: new_nodes) {
                 int hash=Math.abs((node.hashCode() * FACTOR) & (HASH_SPACE - 1));

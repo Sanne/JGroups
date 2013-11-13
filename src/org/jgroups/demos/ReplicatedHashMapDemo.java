@@ -7,8 +7,10 @@ import org.jgroups.Address;
 import org.jgroups.JChannel;
 import org.jgroups.View;
 import org.jgroups.blocks.ReplicatedHashMap;
+import org.jgroups.blocks.collections.AddressSet;
 
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -208,7 +210,7 @@ public class ReplicatedHashMapDemo extends Frame implements WindowListener, Acti
     }
 
 
-    public void viewChange(View view, java.util.List<Address> new_mbrs, java.util.List<Address> old_mbrs) {
+    public void viewChange(View view, AddressSet<Address> new_mbrs, AddressSet<Address> old_mbrs) {
         System.out.println("** view: " + view);
         _setTitle();
     }

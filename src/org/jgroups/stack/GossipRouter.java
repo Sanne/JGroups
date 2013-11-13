@@ -6,6 +6,7 @@ import org.jgroups.protocols.PingData;
 import org.jgroups.annotations.ManagedAttribute;
 import org.jgroups.annotations.ManagedOperation;
 import org.jgroups.annotations.Property;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.jmx.JmxConfigurator;
 import org.jgroups.logging.Log;
 import org.jgroups.logging.LogFactory;
@@ -13,6 +14,7 @@ import org.jgroups.util.*;
 import org.jgroups.util.UUID;
 
 import javax.management.MBeanServer;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
@@ -731,7 +733,7 @@ public class GossipRouter {
                                 for(Address logical_addr: map.keySet()) {
                                     physical_addrs=address_mappings.get(logical_addr);
                                     PingData rsp=new PingData(logical_addr, null, true, UUID.get(logical_addr),
-                                                              physical_addrs != null? new ArrayList<PhysicalAddress>(physical_addrs) : null);
+                                            AddressSet.fromSet(physical_addrs));
                                     mbrs.add(rsp);
                                 }
                             }

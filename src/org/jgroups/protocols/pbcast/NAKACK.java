@@ -5,6 +5,7 @@ import org.jgroups.Event;
 import org.jgroups.Message;
 import org.jgroups.View;
 import org.jgroups.annotations.*;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.conf.PropertyConverters;
 import org.jgroups.protocols.TP;
 import org.jgroups.stack.*;
@@ -507,7 +508,7 @@ public class NAKACK extends Protocol implements Retransmitter.RetransmitCommand,
 
             case Event.TMP_VIEW:
                 View tmp_view=(View)evt.getArg();
-                List<Address> mbrs=tmp_view.getMembers();
+                AddressSet<Address> mbrs=tmp_view.getMembers();
                 members.clear();
                 members.addAll(mbrs);
                 break;

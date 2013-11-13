@@ -4,12 +4,14 @@ package org.jgroups.blocks;
 
 import org.jgroups.*;
 import org.jgroups.annotations.Unsupported;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.jmx.JmxConfigurator;
 import org.jgroups.logging.Log;
 import org.jgroups.logging.LogFactory;
 import org.jgroups.util.Util;
 
 import javax.management.MBeanServer;
+
 import java.io.*;
 import java.util.*;
 
@@ -570,7 +572,7 @@ public class ReplicatedTree extends ReceiverAdapter {
     /*----------------------- MembershipListener ------------------------*/
 
     public void viewAccepted(View new_view) {
-        List<Address> new_mbrs=new_view.getMembers();
+        AddressSet<Address> new_mbrs=new_view.getMembers();
 
         // todo: if MergeView, fetch and reconcile state from coordinator
         // actually maybe this is best left up to the application ? we just notify them and let the appl handle it ?

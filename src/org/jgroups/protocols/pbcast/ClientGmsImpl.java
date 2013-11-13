@@ -5,6 +5,7 @@ import org.jgroups.Address;
 import org.jgroups.Event;
 import org.jgroups.Message;
 import org.jgroups.View;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.protocols.PingData;
 import org.jgroups.util.Digest;
 import org.jgroups.util.Promise;
@@ -295,7 +296,7 @@ public class ClientGmsImpl extends GmsImpl {
 
 
     void becomeSingletonMember(Address mbr) {
-        View new_view=View.create(mbr, 0, mbr); // create singleton view with mbr as only member
+        View new_view=View.create(mbr, 0, AddressSet.singleton(mbr)); // create singleton view with mbr as only member
 
         // set the initial digest (since I'm the first member)
         Digest initial_digest=new Digest(mbr, 0, 0);

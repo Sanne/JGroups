@@ -3,6 +3,7 @@ package org.jgroups.stack;
 import org.jgroups.Address;
 import org.jgroups.PhysicalAddress;
 import org.jgroups.annotations.GuardedBy;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.logging.Log;
 import org.jgroups.logging.LogFactory;
 import org.jgroups.protocols.PingData;
@@ -157,7 +158,7 @@ public class RouterStub implements Comparable<RouterStub> {
      * Register this process with the router under <code>group</code>.
      * @param group The name of the group under which to register
      */
-    public void connect(String group, Address addr, String logical_name, List<PhysicalAddress> phys_addrs) throws Exception {
+    public void connect(String group, Address addr, String logical_name, AddressSet<PhysicalAddress> phys_addrs) throws Exception {
         lock.lock();
         try {
             _doConnect();

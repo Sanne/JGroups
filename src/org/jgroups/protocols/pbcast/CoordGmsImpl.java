@@ -102,9 +102,9 @@ public class CoordGmsImpl extends ServerGmsImpl {
     public void handleMembershipChange(Collection<Request> requests) {
         boolean joinAndStateTransferInitiated=false;
         boolean useFlushIfPresent=gms.use_flush_if_present;
-        Collection<Address> new_mbrs=new LinkedHashSet<Address>(requests.size());
-        Collection<Address> suspected_mbrs=new LinkedHashSet<Address>(requests.size());
-        Collection<Address> leaving_mbrs=new LinkedHashSet<Address>(requests.size());
+        AddressSet<Address> new_mbrs=AddressSet.newEmptySet(requests.size());
+        AddressSet<Address> suspected_mbrs=AddressSet.newEmptySet(requests.size());
+        AddressSet<Address> leaving_mbrs=AddressSet.newEmptySet(requests.size());
 
         boolean self_leaving=false; // is the coord leaving
 
@@ -146,7 +146,7 @@ public class CoordGmsImpl extends ServerGmsImpl {
             return;
         }
 
-        List<Address> current_members=gms.members.getMembers();
+        AddressSet<Address> current_members=gms.members.getMembers();
         leaving_mbrs.retainAll(current_members); // remove all elements of leaving_mbrs which are not current members
         if(suspected_mbrs.remove(gms.local_addr))
             log.warn("I am the coord and I'm being suspected -- will probably leave shortly");
@@ -202,7 +202,7 @@ public class CoordGmsImpl extends ServerGmsImpl {
             if(hasJoiningMembers) {
                 gms.getDownProtocol().down(new Event(Event.SUSPEND_STABLE, MAX_SUSPEND_TIMEOUT));
                 // create a new digest, which contains the new members, minus left members
-                MutableDigest join_digest=new MutableDigest(new_view.getMembersRaw()).set(gms.getDigest());
+                MutableDigest join_digest=new MutableDigest(new_view.getMembers()).set(gms.getDigest());
                 for(Address member: new_mbrs)
                     join_digest.set(member,0,0); // ... and set the new members. their first seqno will be 1
 

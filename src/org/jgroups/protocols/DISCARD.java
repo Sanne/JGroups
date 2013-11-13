@@ -6,10 +6,12 @@ import org.jgroups.Event;
 import org.jgroups.Message;
 import org.jgroups.View;
 import org.jgroups.annotations.*;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.stack.Protocol;
 import org.jgroups.util.MessageBatch;
 
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -44,7 +46,7 @@ public class DISCARD extends Protocol {
     protected final Set<Address>        ignoredMembers = new HashSet<Address>();
 
 
-    protected final Collection<Address> members=new ArrayList<Address>();
+    protected final AddressSet<Address> members=AddressSet.newEmptySet(11);
 
     @Property(description="drop all messages (up or down)",writable=true)
     protected boolean                   discard_all=false;
@@ -240,7 +242,7 @@ public class DISCARD extends Protocol {
                 break;
             case Event.VIEW_CHANGE:
                 View view=(View)evt.getArg();
-                List<Address> mbrs=view.getMembers();
+                AddressSet<Address> mbrs=view.getMembers();
                 members.clear();
                 members.addAll(mbrs);
                 ignoredMembers.retainAll(mbrs); // remove all non members

@@ -4,6 +4,7 @@ import org.jgroups.Address;
 import org.jgroups.View;
 import org.jgroups.annotations.ManagedAttribute;
 import org.jgroups.annotations.Property;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.util.Util;
 
 import java.util.ArrayList;
@@ -91,11 +92,11 @@ public class CENTRAL_EXECUTOR extends Executing {
         
         if(num_backups > 0) {
             if (is_coord) {
-                List<Address> new_backups=Util.pickNext(view.getMembers(), local_addr, num_backups);
-                List<Address> new_members=null;
+                AddressSet<Address> new_backups=Util.pickNext(view.getMembers(), local_addr, num_backups);
+                AddressSet<Address> new_members=null;
                 synchronized(backups) {
                     if(!backups.equals(new_backups)) {
-                        new_members=new ArrayList<Address>(new_backups);
+                        new_members=new_backups.clone();
                         new_members.removeAll(backups);
                         backups.clear();
                         backups.addAll(new_backups);
@@ -110,11 +111,11 @@ public class CENTRAL_EXECUTOR extends Executing {
             // send multiple requests but don't if to prevent more message being
             // sent.
             else {
-                List<Address> possiblebackups = Util.pickNext(view.getMembers(), 
+                AddressSet<Address> possiblebackups = Util.pickNext(view.getMembers(), 
                     coord, num_backups);
                 
                 boolean foundMyself = false;
-                List<Address> myBackups = new ArrayList<Address>();
+                AddressSet<Address> myBackups = AddressSet.newEmptySet();
                 for (Address backup : possiblebackups) {
                     if (foundMyself) {
                         myBackups.add(backup);
@@ -142,7 +143,7 @@ public class CENTRAL_EXECUTOR extends Executing {
         }
     }
     
-    protected void copyQueueTo(List<Address> new_joiners) {
+    protected void copyQueueTo(AddressSet<Address> new_joiners) {
         Set<Owner> copyRequests;
         Set<Owner> copyConsumers;
         

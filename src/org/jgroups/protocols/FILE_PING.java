@@ -5,6 +5,7 @@ import org.jgroups.Event;
 import org.jgroups.PhysicalAddress;
 import org.jgroups.View;
 import org.jgroups.annotations.Property;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.util.UUID;
 import org.jgroups.util.Util;
 
@@ -64,7 +65,7 @@ public class FILE_PING extends Discovery {
         return true;
     }
 
-    public Collection<PhysicalAddress> fetchClusterMembers(String cluster_name) {
+    public AddressSet<PhysicalAddress> fetchClusterMembers(String cluster_name) {
         List<PingData> existing_mbrs=readAll(cluster_name);
 
         PhysicalAddress physical_addr=(PhysicalAddress)down(new Event(Event.GET_PHYSICAL_ADDRESS, local_addr));
@@ -74,9 +75,9 @@ public class FILE_PING extends Discovery {
 
         // If we don't find any files, return immediately
         if(existing_mbrs.isEmpty())
-            return Collections.emptyList();
+            return AddressSet.newEmptySet();
 
-        Set<PhysicalAddress> retval=new HashSet<PhysicalAddress>();
+        AddressSet<PhysicalAddress> retval=AddressSet.newEmptySet();
 
         for(PingData tmp: existing_mbrs) {
             Collection<PhysicalAddress> dests=tmp != null? tmp.getPhysicalAddrs() : null;

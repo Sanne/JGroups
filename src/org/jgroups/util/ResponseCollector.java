@@ -2,6 +2,7 @@ package org.jgroups.util;
 
 import org.jgroups.Address;
 import org.jgroups.annotations.GuardedBy;
+import org.jgroups.blocks.collections.AddressSet;
 
 import java.util.*;
 import java.util.concurrent.locks.Lock;
@@ -23,13 +24,8 @@ public class ResponseCollector<T> {
      *
      * @param members List of members from which we expect responses
      */
-    public ResponseCollector(Collection<Address> members) {
+    public ResponseCollector(AddressSet<Address> members) {
         responses=members != null? new HashMap<Address,T>(members.size()) : new HashMap<Address,T>();
-        reset(members);
-    }
-
-    public ResponseCollector(Address ... members) {
-        responses=members != null? new HashMap<Address,T>(members.length) : new HashMap<Address,T>();
         reset(members);
     }
 
@@ -65,7 +61,7 @@ public class ResponseCollector<T> {
         }
     }
 
-    public void remove(List<Address> members) {
+    public void remove(AddressSet<Address> members) {
         if(members == null || members.isEmpty())
             return;
         lock.lock();
@@ -79,7 +75,7 @@ public class ResponseCollector<T> {
         }
     }
 
-    public void retainAll(List<Address> members) {
+    public void retainAll(AddressSet<Address> members) {
         if(members == null || members.isEmpty())
             return;
         lock.lock();
@@ -137,8 +133,8 @@ public class ResponseCollector<T> {
     }
 
     /** Returns a list of members which didn't send a valid response */
-    public List<Address> getMissing() {
-        List<Address> retval=new ArrayList<Address>();
+    public AddressSet<Address> getMissing() {
+        AddressSet<Address> retval=AddressSet.newEmptySet();
         for(Map.Entry<Address,T> entry: responses.entrySet()) {
             if(entry.getValue() == null)
                 retval.add(entry.getKey());
@@ -146,8 +142,8 @@ public class ResponseCollector<T> {
         return retval;
     }
 
-    public List<Address> getValidResults() {
-        List<Address> retval=new ArrayList<Address>();
+    public AddressSet<Address> getValidResults() {
+        AddressSet<Address> retval=AddressSet.newEmptySet();
         for(Map.Entry<Address,T> entry: responses.entrySet()) {
             if(entry.getValue() != null)
                 retval.add(entry.getKey());
@@ -204,10 +200,10 @@ public class ResponseCollector<T> {
     }
 
     public void reset() {
-        reset((Collection<Address>)null);
+        reset(AddressSet.newEmptySet(0));
     }
 
-    public void reset(Collection<Address> members) {
+    public void reset(AddressSet<Address> members) {
         lock.lock();
         try {
             responses.clear();
@@ -221,23 +217,6 @@ public class ResponseCollector<T> {
             lock.unlock();
         }
     }
-
-    public void reset(Address ... members) {
-        lock.lock();
-        try {
-            responses.clear();
-            if(members != null) {
-                for(Address mbr: members)
-                    responses.put(mbr, null);
-            }
-            cond.signalAll();
-        }
-        finally {
-            lock.unlock();
-        }
-    }
-
-
 
     public String toString() {
         StringBuilder sb=new StringBuilder();

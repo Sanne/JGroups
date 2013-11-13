@@ -1,14 +1,18 @@
 
 package org.jgroups.protocols;
 
-import org.jgroups.*;
-import org.jgroups.util.SizeStreamable;
-import org.jgroups.util.Util;
-
 import java.io.DataInput;
 import java.io.DataOutput;
-import java.util.ArrayList;
 import java.util.Collection;
+
+import org.jgroups.Address;
+import org.jgroups.Global;
+import org.jgroups.PhysicalAddress;
+import org.jgroups.View;
+import org.jgroups.ViewId;
+import org.jgroups.blocks.collections.AddressSet;
+import org.jgroups.util.SizeStreamable;
+import org.jgroups.util.Util;
 
 /**
  * Encapsulates information about a cluster node, e.g. local address, coordinator's address, logical name and
@@ -21,7 +25,7 @@ public class PingData implements SizeStreamable {
     protected ViewId  view_id=null; // only sent with GMS-triggered discovery response
     protected boolean is_server=false;
     protected String  logical_name=null;
-    protected Collection<PhysicalAddress> physical_addrs=null;
+    protected AddressSet<PhysicalAddress> physical_addrs=null;
 
 
     public PingData() {
@@ -35,16 +39,16 @@ public class PingData implements SizeStreamable {
 
 
     public PingData(Address sender, View view, boolean is_server,
-                    String logical_name, Collection<PhysicalAddress> physical_addrs) {
+                    String logical_name, AddressSet<PhysicalAddress> physical_addrs) {
         this(sender, view, is_server);
         this.logical_name=logical_name;
         if(physical_addrs != null)
-            this.physical_addrs=new ArrayList<PhysicalAddress>(physical_addrs);
+            this.physical_addrs=physical_addrs.clone();
     }
 
 
     public PingData(Address sender, View view, ViewId view_id, boolean is_server,
-                    String logical_name, Collection<PhysicalAddress> physical_addrs) {
+                    String logical_name, AddressSet<PhysicalAddress> physical_addrs) {
         this(sender, view, is_server, logical_name, physical_addrs);
         this.view_id=view_id;
     }
@@ -94,7 +98,7 @@ public class PingData implements SizeStreamable {
         return logical_name;
     }
 
-    public Collection<PhysicalAddress> getPhysicalAddrs() {
+    public AddressSet<PhysicalAddress> getPhysicalAddrs() {
         return physical_addrs;
     }
 
@@ -160,7 +164,7 @@ public class PingData implements SizeStreamable {
         view_id=Util.readViewId(instream);
         is_server=instream.readBoolean();
         logical_name=Util.readString(instream);
-        physical_addrs=(Collection<PhysicalAddress>)Util.readAddresses(instream, ArrayList.class);
+        physical_addrs=Util.readPhysicalAddresses(instream);
     }
 
     public int size() {

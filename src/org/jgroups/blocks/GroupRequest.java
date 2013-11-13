@@ -5,6 +5,7 @@ import org.jgroups.Address;
 import org.jgroups.Message;
 import org.jgroups.View;
 import org.jgroups.annotations.GuardedBy;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.protocols.relay.SiteAddress;
 import org.jgroups.util.Rsp;
 import org.jgroups.util.RspList;
@@ -100,7 +101,7 @@ public class GroupRequest<T> extends Request {
 
 
     public void sendRequest() throws Exception {
-        sendRequest(requests.keySet(), req_id);
+        sendRequest(AddressSet.fromSet(requests.keySet()), req_id);
     }
 
     /* ---------------------- Interface RspCollector -------------------------- */
@@ -231,7 +232,7 @@ public class GroupRequest<T> extends Request {
         if(new_view == null || requests == null || requests.isEmpty())
             return;
 
-        List<Address> mbrs=new_view.getMembers();
+        AddressSet<Address> mbrs=new_view.getMembers();
         if(mbrs == null)
             return;
 
@@ -355,7 +356,7 @@ public class GroupRequest<T> extends Request {
     }
 
 
-    private void sendRequest(final Collection<Address> targetMembers, long requestId) throws Exception {
+    private void sendRequest(final AddressSet<Address> targetMembers, long requestId) throws Exception {
         try {
             corr.sendRequest(requestId, targetMembers, request_msg, options.getMode() == ResponseMode.GET_NONE? null : this, options);
         }

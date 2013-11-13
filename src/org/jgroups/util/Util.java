@@ -4,6 +4,7 @@ import org.jgroups.*;
 import org.jgroups.TimeoutException;
 import org.jgroups.auth.AuthToken;
 import org.jgroups.blocks.Connection;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.conf.ClassConfigurator;
 import org.jgroups.jmx.JmxConfigurator;
 import org.jgroups.logging.Log;
@@ -20,6 +21,7 @@ import org.jgroups.stack.ProtocolStack;
 
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
+
 import java.io.*;
 import java.lang.annotation.Annotation;
 import java.lang.management.ManagementFactory;
@@ -443,7 +445,7 @@ public class Util {
         View view=ch.getView();
         if (view != null) {
             ViewId vid = view.getViewId();
-            List<Address> members = Arrays.asList(ch.getAddress());
+            AddressSet<Address> members = AddressSet.singleton(ch.getAddress());
 
             ViewId new_vid = new ViewId(ch.getAddress(), vid.getId() + 1);
             View new_view = new View(new_vid, members);
@@ -801,7 +803,7 @@ public class Util {
     }
 
 
-    public static byte[] collectionToByteBuffer(Collection<Address> c) throws Exception {
+    public static byte[] collectionToByteBuffer(AddressSet c) throws Exception {
         byte[] result=null;
         final ByteArrayOutputStream out_stream=new ExposedByteArrayOutputStream(512);
         DataOutputStream out=new ExposedDataOutputStream(out_stream);
@@ -1002,66 +1004,9 @@ public class Util {
         addr.writeTo(out);
     }
 
-    /**
-     * Writes a list of Addresses. Can contain 65K addresses at most
-     *
-     * @param v A Collection<Address>
-     * @param out
-     * @throws Exception
-     */
-    public static void writeAddresses(Collection<? extends Address> v, DataOutput out) throws Exception {
-        if(v == null) {
-            out.writeShort(-1);
-            return;
-        }
-        out.writeShort(v.size());
-        for(Address addr: v) {
-            Util.writeAddress(addr, out);
-        }
+    public static AddressSet<Address> readAddresses(DataInput in) throws Exception {
+        return AddressSet.fromDataInput(in);
     }
-
-    public static void writeAddresses(final Address[] addrs, DataOutput out) throws Exception {
-        if(addrs == null) {
-            out.writeShort(-1);
-            return;
-        }
-        out.writeShort(addrs.length);
-        for(Address addr: addrs)
-            Util.writeAddress(addr, out);
-    }
-
-    /**
-     *
-     *
-     * @param in
-     * @param cl The type of Collection, e.g. ArrayList.class
-     * @return Collection of Address objects
-     * @throws Exception
-     */
-    public static Collection<? extends Address> readAddresses(DataInput in, Class cl) throws Exception {
-        short length=in.readShort();
-        if(length < 0) return null;
-        Collection<Address> retval=(Collection<Address>)cl.newInstance();
-        Address addr;
-        for(int i=0; i < length; i++) {
-            addr=Util.readAddress(in);
-            retval.add(addr);
-        }
-        return retval;
-    }
-
-
-    public static Address[] readAddresses(DataInput in) throws Exception {
-        short length=in.readShort();
-        if(length < 0) return null;
-        Address[] retval=new Address[length];
-        for(int i=0; i < length; i++) {
-            Address addr=Util.readAddress(in);
-            retval[i]=addr;
-        }
-        return retval;
-    }
-
 
     /**
      * Returns the marshalled size of a Collection of Addresses.
@@ -1069,7 +1014,7 @@ public class Util {
      * @param addrs Collection<Address>
      * @return long size
      */
-    public static long size(Collection<? extends Address> addrs) {
+    public static <T extends Address> long size(AddressSet<T> addrs) {
         int retval=Global.SHORT_SIZE; // number of elements
         if(addrs != null && !addrs.isEmpty()) {
             Address addr=addrs.iterator().next();
@@ -1077,15 +1022,6 @@ public class Util {
         }
         return retval;
     }
-
-    public static long size(Address[] addrs) {
-        int retval=Global.SHORT_SIZE; // number of elements
-        if(addrs != null)
-            for(Address addr: addrs)
-                retval+=Util.size(addr);
-        return retval;
-    }
-
 
     public static void writeStreamable(Streamable obj, DataOutput out) throws Exception {
         if(obj == null) {
@@ -2394,26 +2330,26 @@ public class Util {
     }
 
 
-    public static List<Address> leftMembers(Collection<Address> old_list, Collection<Address> new_list) {
+    public static AddressSet<Address> leftMembers(AddressSet<Address> old_list, AddressSet<Address> new_list) {
         if(old_list == null || new_list == null)
             return null;
-        List<Address> retval=new ArrayList<Address>(old_list);
+        AddressSet<Address> retval= old_list.clone();
         retval.removeAll(new_list);
         return retval;
     }
 
-    public static List<Address> newMembers(List<Address> old_list, List<Address> new_list) {
+    public static AddressSet<Address> newMembers(AddressSet<Address> old_list, AddressSet<Address> new_list) {
         if(old_list == null || new_list == null)
             return null;
-        List<Address> retval=new ArrayList<Address>(new_list);
+        AddressSet<Address> retval= new_list.clone();
         retval.removeAll(old_list);
         return retval;
     }
 
-    public static <T> List<T> newElements(List<T> old_list, List<T> new_list) {
+    public static <T> AddressSet<Address> newElements(AddressSet<Address> old_list, AddressSet<Address> new_list) {
         if(new_list == null)
-            return new ArrayList<T>();
-        List<T> retval=new ArrayList<T>(new_list);
+            return AddressSet.newEmptySet();
+        AddressSet<Address> retval=new_list.clone();
         if(old_list != null)
             retval.removeAll(old_list);
         return retval;
@@ -2491,12 +2427,12 @@ public class Util {
      * @param map
      * @return
      */
-    public static Collection<Address> determineMergeParticipants(Map<Address,View> map) {
-        Set<Address> coords=new HashSet<Address>();
-        Set<Address> all_addrs=new HashSet<Address>();
+    public static AddressSet<Address> determineMergeParticipants(Map<Address,View> map) {
+        AddressSet<Address> coords=AddressSet.newEmptySet();
+        AddressSet<Address> all_addrs=AddressSet.newEmptySet();
 
         if(map == null)
-            return Collections.emptyList();
+            return AddressSet.newEmptySet();
 
         for(View view: map.values())
             all_addrs.addAll(view.getMembers());
@@ -2509,7 +2445,7 @@ public class Util {
 
         for(Address coord: coords) {
             View view=map.get(coord);
-            Collection<Address> mbrs=view != null? view.getMembers() : null;
+            AddressSet<Address> mbrs=view != null? view.getMembers() : null;
             if(mbrs != null)
                 all_addrs.removeAll(mbrs);
         }
@@ -2524,8 +2460,8 @@ public class Util {
      * @param map
      * @return
      */
-    public static Collection<Address> determineMergeCoords(Map<Address,View> map) {
-        Set<Address> retval=new HashSet<Address>();
+    public static AddressSet<Address> determineMergeCoords(Map<Address,View> map) {
+        AddressSet<Address> retval=AddressSet.newEmptySet();
         if(map != null) {
             for(View view: map.values()) {
                 Address coord=view.getCreator();
@@ -2542,13 +2478,13 @@ public class Util {
      * @param map
      * @return
      */
-    public static Collection<Address> determineActualMergeCoords(Map<Address,View> map) {
-        Set<Address> retval=new HashSet<Address>();
+    public static AddressSet<Address> determineActualMergeCoords(Map<Address,View> map) {
+        AddressSet<Address> retval=AddressSet.newEmptySet();
         if(map != null) {
             for(Map.Entry<Address,View> entry: map.entrySet()) {
                 Address sender=entry.getKey();
-                List<Address> members=entry.getValue().getMembers();
-                Address actual_coord=members.isEmpty() ? null : members.get(0);
+                AddressSet<Address> members=entry.getValue().getMembers();
+                Address actual_coord=members.getFirst();
                 if(sender.equals(actual_coord))
                     retval.add(sender);
             }
@@ -2567,7 +2503,7 @@ public class Util {
     public static int getRank(View view, Address addr) {
         if(view == null || addr == null)
             return 0;
-        List<Address> members=view.getMembers();
+        AddressSet<Address> members=view.getMembers();
         for(int i=0; i < members.size(); i++) {
             Address mbr=members.get(i);
             if(mbr.equals(addr))
@@ -2576,12 +2512,11 @@ public class Util {
         return 0;
     }
 
-    public static int getRank(Collection<Address> members, Address addr) {
+    public static int getRank(AddressSet<Address> members, Address addr) {
         if(members == null || addr == null)
             return -1;
         int index=0;
-        for(Iterator<Address> it=members.iterator(); it.hasNext();) {
-            Address mbr=it.next();
+        for(Address mbr : members) {
             if(mbr.equals(addr))
                 return index+1;
             index++;
@@ -2597,11 +2532,11 @@ public class Util {
             return list.get(index);
         }
 
-    public static <T> T pickRandomElement(T[] array) {
+    public static <T extends Address> T pickRandomElement(AddressSet<T> list) {
         if(array == null) return null;
-        int size=array.length;
+        int size=list.size();
         int index=(int)((Math.random() * size * 10) % size);
-        return array[index];
+        return list.get(index);
     }
 
     /**
@@ -2611,7 +2546,7 @@ public class Util {
      * @param <T>
      * @return
      */
-    public static <T> T pickNext(List<T> list, T obj) {
+    public static <T extends Address> T pickNext(AddressSet<T> list, T obj) {
         if(list == null || obj == null)
             return null;
         Object[] array=list.toArray();
@@ -2624,11 +2559,11 @@ public class Util {
     }
 
     /** Returns the next min(N,list.size()) elements after obj */ 
-    public static <T> List<T> pickNext(List<T> list, T obj, int num) {
-        List<T> retval=new ArrayList<T>();
+    public static <T extends Address> AddressSet<T> pickNext(AddressSet<T> list, T obj, int num) {
         if(list == null || list.size() < 2)
-            return retval;
-        int index=list.indexOf(obj);
+            return AddressSet.immutableEmptySet();
+        AddressSet<T> retval = AddressSet.newEmptySet(7);
+        int index=list.positionOf(obj);
         if(index != -1) {
             for(int i=1; i <= num && i < list.size(); i++) {
                 T tmp=list.get((index +i) % list.size());
@@ -2691,16 +2626,11 @@ public class Util {
      * Returns all members that left between 2 views. All members that are element of old_mbrs but not element of
      * new_mbrs are returned.
      */
-    public static List<Address> determineLeftMembers(List<Address> old_mbrs, List<Address> new_mbrs) {
-        List<Address> retval=new ArrayList<Address>();
+    public static AddressSet<Address> determineLeftMembers(AddressSet<Address> old_mbrs, AddressSet<Address> new_mbrs) {
         if(old_mbrs == null || new_mbrs == null)
-            return retval;
-
-        for(int i=0; i < old_mbrs.size(); i++) {
-            Address mbr=old_mbrs.get(i);
-            if(!new_mbrs.contains(mbr))
-                retval.add(mbr);
-        }
+            return AddressSet.newEmptySet();
+        AddressSet<Address> retval=old_mbrs.clone();
+        retval.removeAll(new_mbrs);
         return retval;
     }
 
@@ -3450,7 +3380,7 @@ public class Util {
             return hostname;
     }
 
-    public static boolean startFlush(Channel c, List<Address> flushParticipants,
+    public static boolean startFlush(Channel c, AddressSet<Address> flushParticipants,
             int numberOfAttempts, long randomSleepTimeoutFloor, long randomSleepTimeoutCeiling) {
       int attemptCount = 0;
       while (attemptCount < numberOfAttempts) {
@@ -3465,7 +3395,7 @@ public class Util {
       return false;
     }
 
-    public static boolean startFlush(Channel c, List<Address> flushParticipants) {
+    public static boolean startFlush(Channel c, AddressSet<Address> flushParticipants) {
     	return startFlush(c,flushParticipants,4,1000,5000);
     }
 
@@ -4263,15 +4193,15 @@ public class Util {
     public static boolean isCoordinator(View view, Address local_addr) {
         if(view == null || local_addr == null)
             return false;
-        List<Address> mbrs=view.getMembers();
-        return !(mbrs == null || mbrs.isEmpty()) && local_addr.equals(mbrs.iterator().next());
+        AddressSet<Address> mbrs=view.getMembers();
+        return !(mbrs == null || mbrs.isEmpty()) && local_addr.equals(mbrs.getFirst());
     }
 
     public static Address getCoordinator(View view) {
         if(view == null)
             return null;
-        List<Address> mbrs=view.getMembers();
-        return !mbrs.isEmpty()? mbrs.get(0) : null;
+        AddressSet<Address> mbrs=view.getMembers();
+        return !mbrs.isEmpty()? mbrs.getFirst() : null;
     }
 
     public static MBeanServer getMBeanServer() {
@@ -4764,6 +4694,16 @@ public class Util {
     public static void runAsync(Runnable task, ThreadFactory factory, String thread_name) {
         Thread thread=factory.newThread(task, thread_name);
         thread.start();
+    }
+
+    public static void writeAddresses(AddressSet destinations, DataOutput out) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public static AddressSet<PhysicalAddress> readPhysicalAddresses(DataInput in) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 

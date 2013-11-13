@@ -4,6 +4,7 @@ import org.jgroups.annotations.MBean;
 import org.jgroups.annotations.ManagedAttribute;
 import org.jgroups.annotations.ManagedOperation;
 import org.jgroups.blocks.MethodCall;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.conf.ConfiguratorFactory;
 import org.jgroups.conf.ProtocolConfiguration;
 import org.jgroups.conf.ProtocolStackConfigurator;
@@ -864,8 +865,7 @@ public class JChannel extends Channel {
         prot_stack.startStack(cluster_name, local_addr); // calls start() in all protocols, from top to bottom
 
         /*create a temporary view, assume this channel is the only member and is the coordinator*/
-        List<Address> t=new ArrayList<Address>(1);
-        t.add(local_addr);
+        AddressSet<Address> t = AddressSet.singleton(local_addr);
         my_view=new View(local_addr, 0, t);  // create a dummy view
 
         TP transport=prot_stack.getTransport();
@@ -978,7 +978,7 @@ public class JChannel extends Channel {
         }
     }
 
-    public void startFlush(List<Address> flushParticipants, boolean automatic_resume) throws Exception {
+    public void startFlush(AddressSet<Address> flushParticipants, boolean automatic_resume) throws Exception {
         if (!flushSupported())
             throw new IllegalStateException("Flush is not supported, add pbcast.FLUSH protocol to your configuration");
         View v = getView();
@@ -1002,7 +1002,7 @@ public class JChannel extends Channel {
         down(new Event(Event.RESUME));
     }
 
-    public void stopFlush(List<Address> flushParticipants) {
+    public void stopFlush(AddressSet<Address> flushParticipants) {
         if(!flushSupported())
             throw new IllegalStateException("Flush is not supported, add pbcast.FLUSH protocol to your configuration");
         down(new Event(Event.RESUME, flushParticipants));
@@ -1010,11 +1010,11 @@ public class JChannel extends Channel {
     
 
     Address determineCoordinator() {
-        List<Address> mbrs=my_view != null? my_view.getMembers() : null;
+        AddressSet<Address> mbrs=my_view != null? my_view.getMembers() : null;
         if(mbrs == null)
             return null;
         if(!mbrs.isEmpty())
-            return mbrs.iterator().next();
+            return mbrs.getFirst();
         return null;
     }
 

@@ -1,26 +1,31 @@
 package org.jgroups.protocols;
 
+import java.io.DataInputStream;
+import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import org.jgroups.Address;
 import org.jgroups.Event;
 import org.jgroups.Message;
 import org.jgroups.PhysicalAddress;
 import org.jgroups.annotations.Experimental;
 import org.jgroups.annotations.Property;
-import org.jgroups.stack.*;
+import org.jgroups.blocks.collections.AddressSet;
+import org.jgroups.stack.GossipData;
+import org.jgroups.stack.GossipRouter;
+import org.jgroups.stack.IpAddress;
+import org.jgroups.stack.Protocol;
+import org.jgroups.stack.RouterStub;
+import org.jgroups.stack.RouterStubManager;
 import org.jgroups.util.Buffer;
 import org.jgroups.util.ExposedByteArrayOutputStream;
 import org.jgroups.util.ExposedDataOutputStream;
 import org.jgroups.util.Util;
-
-import java.io.DataInputStream;
-import java.net.DatagramSocket;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Replacement for UDP. Instead of sending packets via UDP, a TCP connection is opened to a Router
@@ -148,7 +153,7 @@ public class TUNNEL extends TP {
                  stub.setTcpNoDelay(tcp_nodelay);           
               }  
              PhysicalAddress physical_addr=(PhysicalAddress)down(new Event(Event.GET_PHYSICAL_ADDRESS, local));
-             List<PhysicalAddress> physical_addrs=Arrays.asList(physical_addr);
+             AddressSet<PhysicalAddress> physical_addrs= AddressSet.singleton(physical_addr);
              String logical_name=org.jgroups.util.UUID.get(local);
              List<RouterStub> stubs = stubManager.getStubs();
              tunnel_policy.connect(stubs, group, local, logical_name, physical_addrs);
@@ -290,7 +295,7 @@ public class TUNNEL extends TP {
    }
 
    public interface TUNNELPolicy {
-      public void connect(List<RouterStub> stubs, String group, Address addr, String logical_name, List<PhysicalAddress> phys_addrs);
+      public void connect(List<RouterStub> stubs, String group, Address addr, String logical_name, AddressSet<PhysicalAddress> phys_addrs);
 
       public void sendToAllMembers(List<RouterStub> stubs, String group, byte[] data, int offset, int length) throws Exception;
 
@@ -347,7 +352,7 @@ public class TUNNEL extends TP {
                      + " accepted a message for dest " + dest);
       }
 
-       public void connect(List<RouterStub> stubs, String group, Address addr, String logical_name, List<PhysicalAddress> phys_addrs) {
+       public void connect(List<RouterStub> stubs, String group, Address addr, String logical_name, AddressSet<PhysicalAddress> phys_addrs) {
            for (RouterStub stub : stubs) {
                try {
                    stub.connect(group, addr, logical_name, phys_addrs);

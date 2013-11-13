@@ -4,6 +4,7 @@ import org.jgroups.*;
 import org.jgroups.annotations.MBean;
 import org.jgroups.annotations.ManagedAttribute;
 import org.jgroups.annotations.Property;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.blocks.executor.ExecutionService.DistributedFuture;
 import org.jgroups.blocks.executor.ExecutorEvent;
 import org.jgroups.blocks.executor.ExecutorNotification;
@@ -538,7 +539,7 @@ abstract public class Executing extends Protocol {
         this.view=view;
         if(log.isDebugEnabled())
             log.debug("view=" + view);
-        List<Address> members=view.getMembers();
+        AddressSet<Address> members=view.getMembers();
         
         _consumerLock.lock();
         try {

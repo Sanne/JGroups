@@ -2,6 +2,7 @@ package org.jgroups.protocols.pbcast;
 
 import org.jgroups.*;
 import org.jgroups.annotations.*;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.stack.Protocol;
 import org.jgroups.util.*;
 
@@ -83,7 +84,7 @@ public class FLUSH extends Protocol {
      */
 
     @GuardedBy("sharedLock")
-    private View currentView=new View(new ViewId(), new ArrayList<Address>());
+    private View currentView=new View(new ViewId(), AddressSet.newEmptySet());
 
     private Address localAddress;
 
@@ -95,7 +96,7 @@ public class FLUSH extends Protocol {
     private Address flushCoordinator;
 
     @GuardedBy("sharedLock")
-    private final List<Address> flushMembers=new ArrayList<Address>();
+    private final AddressSet<Address> flushMembers=AddressSet.newEmptySet();
 
     private final AtomicInteger viewCounter = new AtomicInteger(0);
 
@@ -103,13 +104,13 @@ public class FLUSH extends Protocol {
     private final Map<Address, Digest> flushCompletedMap=new HashMap<Address, Digest>();
 
     @GuardedBy("sharedLock")
-    private final List<Address> flushNotCompletedMap=new ArrayList<Address>();
+    private final AddressSet<Address> flushNotCompletedMap=AddressSet.newEmptySet();
 
     @GuardedBy("sharedLock")
     private final Set<Address> suspected=new TreeSet<Address>();
 
     @GuardedBy("sharedLock")
-    private final List<Address> reconcileOks=new ArrayList<Address>();
+    private final AddressSet<Address> reconcileOks=AddressSet.newEmptySet();
 
     private final Object sharedLock = new Object();
 
@@ -172,7 +173,7 @@ public class FLUSH extends Protocol {
 
     public void stop() {
         synchronized (sharedLock) {
-            currentView = new View(new ViewId(), new ArrayList<Address>());
+            currentView = new View(new ViewId(), AddressSet.newEmptySet());
             flushCompletedMap.clear();
             flushNotCompletedMap.clear();
             flushMembers.clear();
@@ -212,16 +213,16 @@ public class FLUSH extends Protocol {
 
     @SuppressWarnings("unchecked")
     private void startFlush(Event evt) {
-        List<Address> flushParticipants = (List<Address>) evt.getArg();
+        AddressSet<Address> flushParticipants = (AddressSet<Address>) evt.getArg();
         startFlush(flushParticipants);
     }
 
-    private void startFlush(List<Address> flushParticipants) {
+    private void startFlush(AddressSet<Address> flushParticipants) {
         if (!flushInProgress.get()) {
             flush_promise.reset();
             synchronized(sharedLock) {
                 if(flushParticipants == null)
-                    flushParticipants=new ArrayList<Address>(currentView.getMembers());
+                    flushParticipants=currentView.getMembers().clone();
             }
             onSuspend(flushParticipants);
             try {
@@ -295,9 +296,9 @@ public class FLUSH extends Protocol {
             case Event.SUSPEND_BUT_FAIL: 
                 if (!flushInProgress.get()) {
                     flush_promise.reset();
-                    ArrayList<Address> flushParticipants = null;
+                    AddressSet<Address> flushParticipants = null;
                     synchronized (sharedLock) {
-                        flushParticipants = new ArrayList<Address>(currentView.getMembers());
+                        flushParticipants = currentView.getMembers();
                     }
                     onSuspend(flushParticipants);
                 }
@@ -367,7 +368,7 @@ public class FLUSH extends Protocol {
                 Message msg = (Message) evt.getArg();
                 final FlushHeader fh = (FlushHeader) msg.getHeader(this.id);
                 if (fh != null) {
-                    final Tuple<Collection<? extends Address>,Digest> tuple=readParticipantsAndDigest(msg.getRawBuffer(),
+                    final Tuple<AddressSet<? extends Address>,Digest> tuple=readParticipantsAndDigest(msg.getRawBuffer(),
                                                                                                       msg.getOffset(),
                                                                                                       msg.getLength());
                     switch (fh.type) {
@@ -539,7 +540,7 @@ public class FLUSH extends Protocol {
 
     private void handleFlushReconcile(Message msg) {
         Address requester = msg.getSrc();
-        Tuple<Collection<? extends Address>,Digest> tuple=readParticipantsAndDigest(msg.getRawBuffer(),
+        Tuple<AddressSet<? extends Address>,Digest> tuple=readParticipantsAndDigest(msg.getRawBuffer(),
                                                                                     msg.getOffset(),msg.getLength());
         Digest reconcileDigest = tuple.getVal2();
 
@@ -569,9 +570,9 @@ public class FLUSH extends Protocol {
             }
             onStartFlush(flushRequester, msg, fh);
         } else {
-            Tuple<Collection<? extends Address>,Digest> tuple=readParticipantsAndDigest(msg.getRawBuffer(),
+            Tuple<AddressSet<? extends Address>,Digest> tuple=readParticipantsAndDigest(msg.getRawBuffer(),
                                                                                         msg.getOffset(),msg.getLength());
-            Collection<? extends Address> flushParticipants=tuple.getVal1();
+            AddressSet<? extends Address> flushParticipants=tuple.getVal1();
             Message response = new Message(flushRequester)
               .putHeader(this.id,new FlushHeader(FlushHeader.FLUSH_NOT_COMPLETED,fh.viewID))
               .setBuffer(marshal(flushParticipants,null));
@@ -581,12 +582,10 @@ public class FLUSH extends Protocol {
         }
     }
 
-    private void rejectFlush(Collection<? extends Address> participants, long viewId) {
+    private void rejectFlush(AddressSet<? extends Address> participants, long viewId) {
         if(participants == null)
             return;
         for (Address flushMember : participants) {
-            if(flushMember == null)
-                continue;
             Message reject = new Message(flushMember, localAddress, null).setFlag(Message.Flag.OOB, Message.Flag.INTERNAL)
               .putHeader(this.id, new FlushHeader(FlushHeader.ABORT_FLUSH, viewId))
               .setBuffer(marshal(participants, null));
@@ -687,9 +686,9 @@ public class FLUSH extends Protocol {
      * Starts the flush protocol
      * @param members List of participants in the flush protocol. Guaranteed to be non-null
      */
-    private void onSuspend(final List<Address> members) {
+    private void onSuspend(final AddressSet<Address> members) {
         Message msg = null;
-        Collection<Address> participantsInFlush = null;
+        AddressSet<Address> participantsInFlush = null;
       synchronized (sharedLock) {
          flushCoordinator = localAddress;         
 
@@ -752,7 +751,7 @@ public class FLUSH extends Protocol {
         }
         boolean proceed = false;
         boolean amIFlushInitiator = false;
-        Tuple<Collection<? extends Address>,Digest> tuple=readParticipantsAndDigest(msg.getRawBuffer(),
+        Tuple<AddressSet<? extends Address>,Digest> tuple=readParticipantsAndDigest(msg.getRawBuffer(),
                                                                                     msg.getOffset(),msg.getLength());
         synchronized (sharedLock) {
             amIFlushInitiator = flushStarter.equals(localAddress);
@@ -798,7 +797,7 @@ public class FLUSH extends Protocol {
         Message msg = null;
         boolean needsReconciliationPhase = false;
         boolean collision = false;
-        final Tuple<Collection<? extends Address>,Digest> tuple=readParticipantsAndDigest(m.getRawBuffer(),
+        final Tuple<AddressSet<? extends Address>,Digest> tuple=readParticipantsAndDigest(m.getRawBuffer(),
                                                                                           m.getOffset(),m.getLength());
         Digest digest = tuple.getVal2();
         synchronized (sharedLock) {
@@ -880,7 +879,7 @@ public class FLUSH extends Protocol {
         if(view == null || digests == null)
             return null;
 
-        MutableDigest digest=new MutableDigest(view.getMembersRaw());
+        MutableDigest digest=new MutableDigest(view.getMembers());
         for(Digest dig: digests)
             digest.merge(dig);
         return digest;
@@ -892,16 +891,16 @@ public class FLUSH extends Protocol {
 
         // handles FlushTest#testFlushWithCrashedFlushCoordinator
         boolean amINeighbourOfCrashedFlushCoordinator = false;
-        ArrayList<Address> flushMembersCopy = null;
+        AddressSet<Address> flushMembersCopy = null;
         synchronized (sharedLock) {
             boolean flushCoordinatorSuspected = address != null && address.equals(flushCoordinator);
             if (flushCoordinatorSuspected) {
-                int indexOfCoordinator = flushMembers.indexOf(flushCoordinator);
-                int myIndex = flushMembers.indexOf(localAddress);
+                int indexOfCoordinator = flushMembers.positionOf(flushCoordinator);
+                int myIndex = flushMembers.positionOf(localAddress);
                 int diff = myIndex - indexOfCoordinator;
                 amINeighbourOfCrashedFlushCoordinator = (diff == 1 || (myIndex == 0 && indexOfCoordinator == flushMembers.size()));
                 if (amINeighbourOfCrashedFlushCoordinator) {
-                    flushMembersCopy = new ArrayList<Address>(flushMembers);
+                    flushMembersCopy = flushMembers.clone();
                 }
             }
         }
@@ -940,7 +939,7 @@ public class FLUSH extends Protocol {
         }
     }
 
-    protected static Buffer marshal(final Collection<? extends Address> participants, final Digest digest) {
+    protected static Buffer marshal(final AddressSet<? extends Address> participants, final Digest digest) {
         final ExposedByteArrayOutputStream out_stream=new ExposedByteArrayOutputStream(512);
         DataOutputStream out=new ExposedDataOutputStream(out_stream);
         try {
@@ -954,14 +953,14 @@ public class FLUSH extends Protocol {
     }
 
 
-    protected  Tuple<Collection<? extends Address>,Digest> readParticipantsAndDigest(byte[] buffer, int offset, int length) {
+    protected  Tuple<AddressSet<? extends Address>,Digest> readParticipantsAndDigest(byte[] buffer, int offset, int length) {
         if(buffer == null) return null;
         ByteArrayInputStream in_stream=new ExposedByteArrayInputStream(buffer, offset, length);
         DataInputStream in=new DataInputStream(in_stream); // changed Nov 29 2004 (bela)
         try {
-            Collection<? extends Address> participants=Util.readAddresses(in, ArrayList.class);
+            AddressSet<? extends Address> participants=Util.readAddresses(in);
             Digest digest=(Digest)Util.readStreamable(Digest.class,in);
-            return new Tuple<Collection<? extends Address>,Digest>(participants, digest);
+            return new Tuple<AddressSet<? extends Address>,Digest>(participants, digest);
         }
         catch(Exception ex) {
             log.error("%s: failed reading particpants and digest from message: %s", localAddress, ex);

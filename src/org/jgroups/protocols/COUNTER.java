@@ -3,6 +3,7 @@ package org.jgroups.protocols;
 import org.jgroups.*;
 import org.jgroups.annotations.*;
 import org.jgroups.blocks.atomic.Counter;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.stack.Protocol;
 import org.jgroups.util.*;
 
@@ -48,7 +49,7 @@ public class COUNTER extends Protocol {
     protected Address coord;
 
     /** Backup coordinators. Only created if num_backups > 0 and coord=true */
-    protected List<Address> backup_coords=null;
+    protected AddressSet<Address> backup_coords=null;
 
     protected Future<?> reconciliation_task_future;
 
@@ -396,17 +397,17 @@ public class COUNTER extends Protocol {
         this.view=view;
         if(log.isDebugEnabled())
             log.debug("view=" + view);
-        List<Address> members=view.getMembers();
+        AddressSet<Address> members=view.getMembers().clone();
         Address old_coord=coord;
         if(!members.isEmpty())
             coord=members.get(0);
 
         if(coord != null && coord.equals(local_addr)) {
-            List<Address> old_backups=backup_coords != null? new ArrayList<Address>(backup_coords) : null;
+            AddressSet<Address> old_backups=backup_coords != null? backup_coords.clone() : null;
             backup_coords=new CopyOnWriteArrayList<Address>(Util.pickNext(members, local_addr, num_backups));
 
             // send the current values to all *new* backups
-            List<Address> new_backups=Util.newElements(old_backups,backup_coords);
+            AddressSet<Address> new_backups=Util.newElements(old_backups,backup_coords);
             for(Address new_backup: new_backups) {
                 for(Map.Entry<String,VersionedValue> entry: counters.entrySet()) {
                     UpdateRequest update=new UpdateRequest(entry.getKey(), entry.getValue().value, entry.getValue().version);
@@ -1152,7 +1153,7 @@ public class COUNTER extends Protocol {
                 versions[index]=entry.getValue().version;
                 index++;
             }
-            List<Address> targets=new ArrayList<Address>(view.getMembers());
+            AddressSet<Address> targets=view.getMembers().clone();
             targets.remove(local_addr);
             responses=new ResponseCollector<ReconcileResponse>(targets); // send to everyone but us
             Request req=new ReconcileRequest(names, values, versions);

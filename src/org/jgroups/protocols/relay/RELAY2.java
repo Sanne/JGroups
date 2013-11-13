@@ -5,6 +5,7 @@ import org.jgroups.annotations.MBean;
 import org.jgroups.annotations.ManagedAttribute;
 import org.jgroups.annotations.ManagedOperation;
 import org.jgroups.annotations.Property;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.conf.ConfiguratorFactory;
 import org.jgroups.protocols.FORWARD_TO_COORD;
 import org.jgroups.protocols.relay.config.RelayConfig;
@@ -81,7 +82,7 @@ public class RELAY2 extends Protocol {
 
     protected volatile Address                         local_addr;
 
-    protected volatile List<Address>                   members=new ArrayList<Address>(11);
+    protected volatile AddressSet<Address>                   members=AddressSet.newEmptySet(11);
 
     /** Whether or not FORWARD_TO_COORD is on the stack */
     @ManagedAttribute(description="FORWARD_TO_COORD protocol is present below the current protocol")

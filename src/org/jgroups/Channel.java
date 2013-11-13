@@ -4,6 +4,7 @@ package org.jgroups;
 
 import org.jgroups.annotations.MBean;
 import org.jgroups.annotations.ManagedAttribute;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.logging.Log;
 import org.jgroups.logging.LogFactory;
 import org.jgroups.stack.Protocol;
@@ -435,7 +436,7 @@ public abstract class Channel /* implements Transport */ {
     *           if true call {@link #stopFlush()} after the flush
     * @see #startFlush(boolean)
     */
-    abstract public void startFlush(List<Address> flushParticipants, boolean automatic_resume)
+    abstract public void startFlush(AddressSet<Address> flushParticipants, boolean automatic_resume)
                 throws Exception;
 
    /**
@@ -454,7 +455,7 @@ public abstract class Channel /* implements Transport */ {
     
     abstract public void stopFlush();
     
-    abstract public void stopFlush(List<Address> flushParticipants);
+    abstract public void stopFlush(AddressSet<Address> flushParticipants);
 
 
    /**

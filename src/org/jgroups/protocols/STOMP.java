@@ -2,6 +2,7 @@ package org.jgroups.protocols;
 
 import org.jgroups.*;
 import org.jgroups.annotations.*;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.stack.Protocol;
 import org.jgroups.util.MessageBatch;
 import org.jgroups.util.UUID;
@@ -302,7 +303,7 @@ public class STOMP extends Protocol implements Runnable {
 
     protected void handleView(View view) {
         broadcastEndpoint();
-        List<Address> mbrs=view.getMembers();
+        AddressSet<Address> mbrs=view.getMembers();
         this.view=view;
         
         synchronized(endpoints) {

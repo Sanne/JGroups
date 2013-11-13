@@ -4,6 +4,7 @@ package org.jgroups.protocols;
 import org.jgroups.*;
 import org.jgroups.annotations.*;
 import org.jgroups.blocks.LazyRemovalCache;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.conf.PropertyConverters;
 import org.jgroups.logging.LogFactory;
 import org.jgroups.stack.DiagnosticsHandler;
@@ -1881,7 +1882,7 @@ public abstract class TP extends Protocol {
                     members.clear();
 
                     if(!isSingleton()) {
-                        List<Address> tmpvec=view.getMembers();
+                        AddressSet<Address> tmpvec=view.getMembers();
                         members.addAll(tmpvec);
                     }
                     else {
@@ -1899,7 +1900,7 @@ public abstract class TP extends Protocol {
                     logical_addr_cache.retainAll(members);
                     fetchLocalAddresses();
 
-                    List<Address> left_mbrs=Util.leftMembers(old_members,members);
+                    AddressSet<Address> left_mbrs=Util.leftMembers(old_members,members);
                     if(left_mbrs != null && !left_mbrs.isEmpty())
                         UUID.removeAll(left_mbrs);
 
@@ -2572,7 +2573,7 @@ public abstract class TP extends Protocol {
                     break;
                 case Event.VIEW_CHANGE:
                     View view=(View)evt.getArg();
-                    List<Address> tmp=view.getMembers();
+                    AddressSet<Address> tmp=view.getMembers();
                     members.clear();
                     members.addAll(tmp);
                     break;

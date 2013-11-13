@@ -6,6 +6,7 @@ import org.jgroups.annotations.MBean;
 import org.jgroups.annotations.ManagedAttribute;
 import org.jgroups.annotations.ManagedOperation;
 import org.jgroups.annotations.Property;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.stack.Protocol;
 import org.jgroups.util.*;
 import org.jgroups.util.UUID;
@@ -67,7 +68,7 @@ public class MERGE3 extends Protocol {
     protected Future<?>      view_consistency_checker;
 
     // hashmap to keep track of view-id sent in INFO messages
-    protected final ConcurrentMap<ViewId,Set<Address>> views=new ConcurrentHashMap<ViewId,Set<Address>>(view != null? view.size() : 16);
+    protected final ConcurrentMap<ViewId,AddressSet> views=new ConcurrentHashMap<ViewId,AddressSet>(view != null? view.size() : 16);
 
     protected final ResponseCollector<View> view_rsps=new ResponseCollector<View>();
 
@@ -99,7 +100,7 @@ public class MERGE3 extends Protocol {
     @ManagedOperation(description="Lists the contents of the cached views")
     public String dumpViews() {
         StringBuilder sb=new StringBuilder();
-        for(Map.Entry<ViewId,Set<Address>> entry: views.entrySet())
+        for(Map.Entry<ViewId,AddressSet> entry: views.entrySet())
             sb.append(entry.getKey()).append(": [")
               .append(Util.printListWithDelimiter(entry.getValue(), ", ", Util.MAX_LIST_PRINT_SIZE)).append("]\n");
         return sb.toString();
@@ -233,8 +234,8 @@ public class MERGE3 extends Protocol {
 
                 startInfoSender();
 
-                List<Address> mbrs=view.getMembers();
-                Address coord=mbrs.isEmpty()? null : mbrs.get(0);
+                AddressSet<Address> mbrs=view.getMembers();
+                Address coord=mbrs.isEmpty()? null : mbrs.getFirst();
                 if(coord != null && coord.equals(local_addr)) {
                     is_coord=true;
                     startViewConsistencyChecker(); // start task if we became coordinator (doesn't start if already running)
@@ -269,7 +270,7 @@ public class MERGE3 extends Protocol {
                         if(hdr.physical_addrs != null)
                             for(PhysicalAddress physical_addr: hdr.physical_addrs)
                                 down(new Event(Event.SET_PHYSICAL_ADDRESS, new Tuple<Address,PhysicalAddress>(sender, physical_addr)));
-                        Set<Address> existing=views.get(hdr.view_id);
+                        AddressSet<Address> existing=views.get(hdr.view_id);
                         if(existing == null) {
                             existing=new ConcurrentSkipListSet<Address>();
                             Set<Address> tmp=views.putIfAbsent(hdr.view_id, existing);
@@ -354,9 +355,9 @@ public class MERGE3 extends Protocol {
                 log.warn("no discovery protocol found, cannot ask for physical addresses to send INFO message");
                 return;
             }
-            Collection<PhysicalAddress> physical_addrs=discovery_protocol.fetchClusterMembers(cluster_name);
+            AddressSet<PhysicalAddress> physical_addrs=discovery_protocol.fetchClusterMembers(cluster_name);
             if(physical_addrs == null)
-                physical_addrs=(Collection<PhysicalAddress>)down_prot.down(new Event(Event.GET_PHYSICAL_ADDRESSES));
+                physical_addrs=(AddressSet<PhysicalAddress>)down_prot.down(new Event(Event.GET_PHYSICAL_ADDRESSES));
 
             if(physical_addrs == null || physical_addrs.isEmpty())
                 return;
@@ -400,7 +401,7 @@ public class MERGE3 extends Protocol {
             // Only add view creators which *are* actually in the set as well, e.g.
             // A|4: {A,B,C} and
             // B|4: {D} would only add A to the coords list. A is a real coordinator
-            for(Map.Entry<ViewId,Set<Address>> entry: views.entrySet()) {
+            for(Map.Entry<ViewId,AddressSet<Address>> entry: views.entrySet()) {
                 Address coord=entry.getKey().getCreator();
                 Set<Address> members=entry.getValue();
                 if(members != null && members.contains(coord))
@@ -492,7 +493,7 @@ public class MERGE3 extends Protocol {
         protected Type                        type=Type.INFO;
         protected ViewId                      view_id;
         protected String                      logical_name;
-        protected Collection<PhysicalAddress> physical_addrs;
+        protected AddressSet<PhysicalAddress> physical_addrs;
 
 
         public MergeHeader() {
@@ -539,7 +540,7 @@ public class MERGE3 extends Protocol {
             type=Type.values()[instream.readByte()];
             view_id=Util.readViewId(instream);
             logical_name=Util.readString(instream);
-            physical_addrs=(Collection<PhysicalAddress>)Util.readAddresses(instream,ArrayList.class);
+            physical_addrs=Util.readPhysicalAddresses(instream);
         }
 
         public String toString() {

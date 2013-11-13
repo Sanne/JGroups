@@ -2,22 +2,35 @@
 package org.jgroups.protocols;
 
 
-import org.jgroups.*;
-import org.jgroups.annotations.*;
-import org.jgroups.stack.Protocol;
-import org.jgroups.util.BoundedList;
-import org.jgroups.util.MessageBatch;
-import org.jgroups.util.TimeScheduler;
-import org.jgroups.util.Util;
-
 import java.io.DataInput;
 import java.io.DataOutput;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import org.jgroups.Address;
+import org.jgroups.Event;
+import org.jgroups.Global;
+import org.jgroups.Header;
+import org.jgroups.Message;
+import org.jgroups.View;
+import org.jgroups.annotations.GuardedBy;
+import org.jgroups.annotations.MBean;
+import org.jgroups.annotations.ManagedAttribute;
+import org.jgroups.annotations.ManagedOperation;
+import org.jgroups.annotations.Property;
+import org.jgroups.blocks.collections.AddressSet;
+import org.jgroups.stack.Protocol;
+import org.jgroups.util.BoundedList;
+import org.jgroups.util.MessageBatch;
+import org.jgroups.util.TimeScheduler;
+import org.jgroups.util.Util;
 
 
 /**
@@ -367,7 +380,7 @@ public class FD extends Protocol {
 
 
         protected byte                 type=HEARTBEAT;
-        protected Collection<Address>  mbrs;
+        protected AddressSet<Address>           mbrs;
         protected Address              from;  // member who detected that suspected_mbr has failed
 
 
@@ -378,7 +391,7 @@ public class FD extends Protocol {
             this.type=type;
         }
 
-        public FdHeader(byte type, Collection<Address> mbrs, Address from) {
+        public FdHeader(byte type, AddressSet mbrs, Address from) {
             this(type);
             this.mbrs=mbrs;
             this.from=from;
@@ -416,7 +429,7 @@ public class FD extends Protocol {
 
         public void readFrom(DataInput in) throws Exception {
             type=in.readByte();
-            mbrs=(Collection<Address>)Util.readAddresses(in, ArrayList.class);
+            mbrs=Util.readAddresses(in);
             from=Util.readAddress(in);
         }
 
@@ -485,7 +498,7 @@ public class FD extends Protocol {
      * any longer. Then the task terminates.
      */
     protected final class Broadcaster {
-        protected final List<Address> suspected_mbrs=new ArrayList<Address>(7);
+        protected final AddressSet<Address> suspected_mbrs=AddressSet.newEmptySet(7);
         protected final Lock          bcast_lock=new ReentrantLock();
         @GuardedBy("bcast_lock")
         protected Future<?>           bcast_future=null;
@@ -493,7 +506,7 @@ public class FD extends Protocol {
         protected BroadcastTask       task;
 
 
-        protected List<Address> getSuspectedMembers() {
+        protected AddressSet<Address> getSuspectedMembers() {
             return suspected_mbrs;
         }
 
@@ -573,10 +586,10 @@ public class FD extends Protocol {
 
 
     protected final class BroadcastTask implements Runnable {
-        protected final List<Address> suspected_members=new ArrayList<Address>();
+        protected final AddressSet suspected_members= AddressSet.newEmptySet();
 
 
-        BroadcastTask(List<Address> suspected_members) {
+        BroadcastTask(AddressSet suspected_members) {
             this.suspected_members.addAll(suspected_members);
         }
 
@@ -596,7 +609,7 @@ public class FD extends Protocol {
                 }
 
                 hdr=new FdHeader(FdHeader.SUSPECT);
-                hdr.mbrs=new ArrayList<Address>(suspected_members);
+                hdr.mbrs=suspected_members.clone();
                 hdr.from=local_addr;
             }
             Message suspect_msg=new Message().setFlag(Message.Flag.INTERNAL).putHeader(id, hdr);

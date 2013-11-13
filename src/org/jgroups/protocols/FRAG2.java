@@ -5,6 +5,7 @@ import org.jgroups.Event;
 import org.jgroups.Message;
 import org.jgroups.View;
 import org.jgroups.annotations.*;
+import org.jgroups.blocks.collections.AddressSet;
 import org.jgroups.stack.Protocol;
 import org.jgroups.util.MessageBatch;
 import org.jgroups.util.Range;
@@ -58,7 +59,7 @@ public class FRAG2 extends Protocol {
     /** Used to assign fragmentation-specific sequence IDs (monotonically increasing) */
     protected int                 curr_id=1;
 
-    protected final List<Address> members=new ArrayList<Address>(11);
+    protected final AddressSet<Address> members=AddressSet.newEmptySet(11);
 
     protected Address             local_addr;
 
@@ -183,8 +184,8 @@ public class FRAG2 extends Protocol {
     }
 
     protected void handleViewChange(View view) {
-        List<Address> new_mbrs=view.getMembers();
-        List<Address> left_mbrs=Util.determineLeftMembers(members, new_mbrs);
+        AddressSet<Address> new_mbrs=view.getMembers();
+        AddressSet<Address> left_mbrs=Util.determineLeftMembers(members, new_mbrs);
         members.clear();
         members.addAll(new_mbrs);
 
